@@ -1,4 +1,4 @@
-# Webservices til kirkelige begivenheder fra de danske sogne og kirkelige enheder (ElasticSearch version)
+# Webservices til kirkelige begivenheder fra de danske sogne og kirkelige enheder
 
 (ElasticSearch version)
 
@@ -874,9 +874,13 @@ Man kan selvfølgelig teste adgang og forespørgsler via programmering og brugen
 <https://www.postman.com/downloads/>
 
 Her er et eksempel på en forespørgsel foretaget med Postman, for at finde alle præster i et givent sogn:
+![image](https://user-images.githubusercontent.com/26836939/143202455-c0926821-c4a8-4743-a7c8-e94c456e3a7f.png)
+
 
 Bemærk at det – på trods af at være et GET request – godt kan lade sig gøre at medsende en ”raw” body (det har man ikke kunne i tidligere versioner af Postman, men det kan man godt i nyere versioner).
 Resultatet findes under Headers efter at man har Sendt forespørgslen:
+![image](https://user-images.githubusercontent.com/26836939/143202577-b984f034-1535-47fc-9117-c6e4c1ad508b.png)
+
 
 På denne måde kan man nemt finde frem til passende søge-kriterier at medsende til ElasticSearch.
 Der er umiddelbart ingen restriktioner på hvor mange requests eller hvor meget data man kan hente hvor ofte,- men vi opfordrer til at man ikke overbelaster vores services unødigt,- da vi så kan blive nødt til at indføre sådanne restriktioner.
@@ -887,7 +891,7 @@ Folkekirkens IT
 E-post: it-kontoret@km.dk  
 Telefon: 70 20 25 35  
 Telefontid: mandag-torsdag kl. 8.30-16.00 - fredag kl. 9.00-14.00  
-Hjemmeside: www.kirkenettet.dk
+Hjemmeside: https://folkekirkensit.dk
 
 ## Referencer
 
@@ -920,6 +924,10 @@ Bemærk at query strengen i parameteren q skal url encodes (hvis ikke din browse
 Bemærk at guery strengen er url encodet direkte ud fra request body (men med source som parameter nu)
 
 ## Ændringslog
+
+### Version 4.0.3
+
+- Tilrettet tekst og tilføjet manglende postman billeder.
 
 ### Version 4.0.2, udgivet 22-11-2021
 

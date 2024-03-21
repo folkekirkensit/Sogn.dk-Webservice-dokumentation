@@ -64,68 +64,72 @@ https://webservice.sogn.dk/event/
 
 #### Begivenheds felter
 
-|        Feltnavn | Felttype       | Forklaring    |
-| :-------------- | -------------- | ------------- |
-|            `id` | integer        | Unikt ID for begivenheden. |
-|         `title` | text           | Titlen på begivenheden. |
-|   `description` | text           | En detaljeret beskrivelse af begivenheden. |
-|        `person` | text           | Navnet på prædikanten/personen, der er tilknyttet begivenheden. |
-|      `category` | keyword        | Kategorien af begivenheden (f.eks. "Gudstjeneste"). |
-|  `locationname` | text           | Navnet på stedet, hvor begivenheden finder sted. |
-|       `kirkeid` | integer        | Unikt ID for kirker |
-|    `locationid` | integer        | Unikt ID for lokationen |
-|      `location` | geo_point      | Geografisk lokation af begivenheden som et geo_point. |
-|   `organiserid` | integer        | Unikt ID for enheder |
-| `organisername` | integer        | Navnet på enheden |
-|       `sogneid` | integer        | 4 cifret Myndighedskode |
-|     `eventtype` | integer        | Type af begivenhed, se begivenheds typer |
-|      `address1` | text           | Adresse linje 1 |
-|      `address2` | text           | Adresse linje 2 |
-|           `zip` | text           | Postnummer |
-|          `city` | text           | Bynavn |
-|     `churchday` | text           | Søndagens navn |
-|       `created` | datetime       | Begivenhed oprettet i systemet |
-|       `changed` | datetime       | Begivenheden sidst ændret |
-|       `deleted` | boolean        | Om begivenheden er blevet slettet |
-|     `noenddate` | boolean        | Om begivenheden er sat til at skjule sluttidspunktet |
-|        `origin` | integer        | Oprettelses oprindelse |
-|       `moreurl` | text           | Link til at læse mere |
-|        `online` | boolean        | Om begivenheden afholdes online, eventuelt som supplement |
-|          `dawa` | text           | Unikt Dawa ID for adgangsadressen (Endnu ikke i drift) Eksperimentel! Man kan ikke regne med at denne værdi er sat. <br> Adgangsadressens unikke id, f.eks. 0a3f5095-45ec-32b8-e044-0003ba298018 som anvendt af DAWA <br> Se <https://dawadocs.dataforsyningen.dk/dok/api/adgangsadresse> feltet id. <br> Vil nok kun være sat / relevant for lokationer (typen 4,5,6). |
-|   `kommunenavn` | text           | Provsti navn |
-|     `provstiid` | integer        | Unik provsti ID |
-|       `stiftid` | integer        | Unik stift ID, se listen over stifter  |
-|     `startdate` | date           | Startdato og -tid for begivenheden. Format: yyyy-MM-dd HH:mm:ss |
-|   `startdateTS` | datetime       | Startdato og -tid for begivenheden |
-|       `enddate` | date           | Slutdato og -tid for begivenheden. Format: yyyy-MM-dd HH:mm:ss  |
-|     `enddateTS` | datetime       | Slutdato og -tid for begivenheden. |
-
+|           Feltnavn | Felttype       | Forklaring    |
+| :----------------- | -------------- | ------------- |
+|               `id` | integer        | Unikt ID for begivenheden. |
+|            `title` | text           | Titlen på begivenheden. |
+|         `subtitle` | text           | Undertitlen på begivenheden. (eksperimentel)|
+|      `description` | text           | En detaljeret beskrivelse af begivenheden. |
+| `shortdescription` | text           | En kort beskrivelse af begivenheden. |
+|           `person` | text           | Navnet på prædikanten/personen, der er tilknyttet begivenheden. |
+|         `category` | keyword        | Kategorien af begivenheden (f.eks. "Gudstjeneste"). |
+|     `locationname` | text           | Navnet på stedet, hvor begivenheden finder sted. |
+|          `kirkeid` | integer        | Unikt ID for kirker. (id til organiser indekset) |
+|       `locationid` | integer        | Unikt ID for lokationen. (id til organiser indekset) |
+|         `location` | geo_point      | Geografisk lokation af begivenheden som et geo_point. |
+|      `organiserid` | integer        | Unikt ID for arrangøren af begivenheden (id til organiser indekset) |
+|    `organisername` | integer        | Navnet på enheden |
+|          `sogneid` | integer        | 4 cifret Myndighedskode (fra KIS) |
+|        `eventtype` | integer        | Type af begivenhed, se begivenheds typer |
+|         `address1` | text           | Adresse linje 1 |
+|         `address2` | text           | Adresse linje 2 |
+|              `zip` | text           | Postnummer |
+|             `city` | text           | Bynavn |
+|        `churchday` | text           | Dagens navn i kirkeåret |
+|          `created` | datetime       | Tidspunkt hvor begivenheden er oprettet i systemet |
+|          `changed` | datetime       | Tidspunkt for seneste ændring af begivenheden |
+|          `deleted` | boolean        | Om begivenheden er blevet slettet |
+|        `noenddate` | boolean        | Om begivenheden er sat til at skjule sluttidspunktet (uden sluttid) |
+|           `origin` | integer        | Oprettelses oprindelse (intern angivelse). |
+|          `moreurl` | text           | Link til at læse mere |
+|           `online` | boolean        | Om begivenheden afholdes online, eventuelt som supplement |
+|             `dawa` | text           | Unikt Dawa ID for adgangsadressen (Endnu ikke i drift) Eksperimentel! Man kan ikke regne med at denne værdi er sat. <br> Adgangsadressens unikke id, f.eks. 0a3f5095-45ec-32b8-e044-0003ba298018 som anvendt af DAWA <br> Se <https://dawadocs.dataforsyningen.dk/dok/api/adgangsadresse> feltet id. <br> Vil nok kun være sat / relevant for lokationer (typen 4,5,6). |
+|      `kommunenavn` | text           | Kommune navn |
+|        `provstiid` | integer        | Unik provsti ID (fra KIS) |
+|          `stiftid` | integer        | Unik stift ID (fra KIS), se listen over stifter  |
+|        `startdate` | date           | Startdato og -tid for begivenheden. Format: yyyy-MM-dd HH:mm:ss  i lokaltid (CET/CEST) |
+|      `startdateTS` | datetime       | Startdato og -tid for begivenheden. unix timestamp i millisekunder |
+|          `enddate` | date           | Slutdato og -tid for begivenheden. Format: yyyy-MM-dd HH:mm:ss  i lokaltid (CET/CEST) |
+|        `enddateTS` | datetime       | Slutdato og -tid for begivenheden. unix timestamp i millisekunder |
+|          `country` | text           | Landekode, normalt blot DK |
+|              `img` | text           | URL til et billede for begivenheden (endnu ikke understøttet) |
+|    `opencommunity` | boolean        | Om begivenheden er angivet som et åbent fællesskab (eksperimentel) |
 
 ### Enheder (`organiser`)
 https://webservice.sogn.dk/organiser/
 
-Sogne, kirker og lokationer
+Sogne, kirker, lokationer og arrangører
 
 #### Organiser felter
 
 |  Feltnavn          | Felttype  | Forklaring|
 |:------------------ | --------- | ------------------------------------------ |
-| `Id`               | interger  | Organiser id. Er så et unikt id på tværs af de forskellige organiser typer. |
-| `type`             | integer   | Typen af organiser: <br> 1: Sogn (KIS), <br> 2: Provsti (KIS), <br> 3: Stift (KIS), <br> 4: Oprettede lokationer fra API leverandørers Sted angivelse <br> 5: Kirke (KIS), <br> 6: Brugeroprettet lokation fra sogn.dk/admin |
-| `stiftid`          | integer   | Stiftets myndighedskode |
-| `provstiid`        | integer   | Provstiets myndighedskode |
-| `organiserids`     | integer   | Organiser ID menighedsrådet er tilknyttet |
-| `sogneid`          | integer   | Sognets myndighedskode. Er også sat for lokationer oprettet af sognebrugere, hvor det så er sognets id der står angivet. |
-| `navn`             | text      | Navnet på organiser/lokation (som jo kan være af forskellig type). Se type. |
-| `kommunenavn`      | text      | Kommunenavn som menighedsrådet er placeret i |
+| `id`               | interger  | Organiser id. Et unikt id på tværs af de forskellige organiser typer. |
+| `type`             | integer   | Typen af organiser: <br> 1: Sogn (KIS), <br> 2: Provsti (KIS), <br> 3: Stift (KIS), <br> 4: Oprettede lokationer fra API leverandørers Sted angivelse <br> 5: Kirke (KIS), <br> 6: Brugeroprettet lokation fra sogn.dk/admin, <br> 7: Brugeroprettede personer |
+| `stiftid`          | integer   | Stiftets myndighedskode (fra KIS) |
+| `provstiid`        | integer   | Provstiets myndighedskode (fra KIS) |
+| `organiserids`     | integer   | De Organiser ID'er som et evt sogn/menighedsråd er tilknyttet (kommasepareret) |
+| `sogneid`          | integer   | Sognets myndighedskode (fra KIS). |
+| `navn`             | text      | Navnet på organiser/lokation (som kan være af forskellig type). Se type. |
+| `kommunenavn`      | text      | Kommunenavn som denne organiser er placeret i |
 | `sogndkurl`        | text      | URL som et sogn har på sogn.dk (feks: sogn.dk/gellerup) Er primært relevant for sogne (typen 1). |
 | `country`          | text      | Landekode, normalt blot DK |
-| `ownurl`           | text      | URL for egen hjemmeside. Dette er primært relevant/sat for sogne. |
-| `deleted`          | boolean   | Om begivenheden er blevet slettet |
-| `changed`          | datetime  | Unix timestampt, Bemærk at denne date vises som antal millisekunder og ikke sekunder. Man kan bruge alle "date" funktioner til at indsnævre en søgning via dette felt. | Dette date felt angiver hvornår en organiser sidst er ændret (eller oprettet). |
-| `created`          | datetime  | Begivenhed oprettet i systemet |
-| `aliases`          | text      | Meta felt |
-| `navnesuggest`     | text      | Meta felt |
+| `ownurl`           | text      | URL for egen hjemmeside. Dette er primært relevant/sat for sogne (type = 1). |
+| `deleted`          | boolean   | Om enheden er blevet slettet |
+| `changed`          | datetime  | Unix timestamp i millisekunder. Man kan bruge alle "date" funktioner til at indsnævre en søgning via dette felt. Feltet angiver hvornår en organiser sidst er ændret. |
+| `created`          | datetime  | Hvornår denne organiser er oprettet i systemet |
+| `aliases`          | text      | Meta felt. Alias for denne organiser (til alternativ stavning ifm søgning). |
+| `navnesuggest`     | search_as_you_type | Meta felt. Til søgning (https://opensearch.org/docs/latest/field-types/supported-field-types/search-as-you-type/) |
 | `origin`           | integer   | Meta felt som vi bruger til at bestemme hvorfra en organiser er kommet ind til OpenSearch fra. Kan ignoreres. |
 | `address1`         | text      | Adresse linje 1 |
 | `address2`         | text      | Adresse linje 2 |
@@ -135,6 +139,7 @@ Sogne, kirker og lokationer
 | `location`         | geo_point | Geo koordinatorne på enheden <br> Det er ikke alle lokationer der har koordinater, men kirker og en del andre har. Lokationer af typen 4 (oprettet via API) har næsten aldrig koordinater. Ej heller sogne, provstier og stifte (typerne 1,2 og 3). |
 | `kirkeid`          | integer   | id som stammer fra KIS. Vil kun være sat for kirker. |
 | `sogneorganiserid` | text      | Tilknyttet sogn, findes på kirker og brugeroprettede lokationer |
+| `dawa`             | text      | Unikt Dawa ID for adgangsadressen (Eksperimentel). Man kan ikke regne med at denne værdi er sat. <br> Adgangsadressens unikke id, f.eks. 0a3f5095-45ec-32b8-e044-0003ba298018 som anvendt af DAWA <br> Se <https://dawadocs.dataforsyningen.dk/dok/api/adgangsadresse> feltet id. <br> Vil nok kun være sat / relevant for lokationer (typen 4,5,6). |
 
 ### Menighedsråd (`mr`)
 https://webservice.sogn.dk/mr/
@@ -147,19 +152,18 @@ Menighedsråd og oplysninger derom
 | :------------- | -------- | ------------------------------- |
 | `navn`         | text     | Navn på menighedsrådet |
 | `kommunenavn`  | text     | Kommunenavn som menighedsrådet er placeret i |
-| `changed`      | datetime | Sidst ændret i unix datetime |
+| `changed`      | datetime | Sidst ændret i unix datetime i millisekunder |
 | `mrkode`       | integer  | Myndighedskoden for menighedsrådet |
 | `id`           | integer  | ID for menighedsrådet, som regel samme som mrkode |
-| `organiserids` | integer  | Organiser ID menighedsrådet er tilknyttet |
-| `navnesuggest` | text     | Menighedsråds navn og kommunenavn sat sammen, til søgning |
-| `type`         | integer  | Type af Kirke |
+| `organiserids` | integer  | Organiser ID (kommasepareret hvis der flere) som dette menighedsråd er tilknyttet |
+| `navnesuggest` | search_as_you_type | Menighedsråds navn og kommunenavn sat sammen, til søgning |
+| `type`         | integer  | Type. 11 for menighedsråd, 8 for Samarbejder (juridiske enheder der har et samarbejde med et menighedsråd - fra KIS) |
 | `email`        | text     | Emailadresse på menighedsrådet |
-| `sognenames`   | text     | Tilhørende sogns navn |
-| `sogneids`     | integer  | Myndighedskoden for sognet |
-| `sogndkurls`   | text     | Link til menighedsrådet på Sogn.dk |
-| `country`      | text     | id som stammer fra KIS. |
-| `deleted`      | bool     | id som stammer fra KIS. |
-| `origin`       | integer  | id som stammer fra KIS. |
+| `sognenames`   | text     | Sognenavn(e) på tilhørende sogne |
+| `sogneids`     | integer  | Sognekode(r) tilknyttet dette Menighedsråd |
+| `sogndkurls`   | text     | Sogne-webadresser for de sogne som dette menighedsråd omfatter på sogn.dk |
+| `deleted`      | bool     | Om det er slettet. |
+| `origin`       | integer  | oprindelses id. Internt. |
 
 
 ### Præster (`priest`)
@@ -170,23 +174,24 @@ https://webservice.sogn.dk/priest/
 | Feltnavn                 | Felttype | Forklaring|
 | :----------------------- | -------- | ----------------------- |
 | `id`                     | integer  | id som stammer fra KIS. |
-| `navn`                   | text     | Navn på menighedsrådet |
-| `navnesuggest`           | integer  | id som stammer fra KIS. |
-| `sogne`                  | text     | Kommunenavn som menighedsrådet er placeret i |
-| `provstier`              | datetime | Sidst ændret i unix datetime |
-| `stifte`                 | integer  | Myndighedskoden for menighedsrådet |
-| `mrkodetilknytninger`    | integer  | id som stammer fra KIS. |
-| `stillingskoder`         | integer  | id som stammer fra KIS. |
-| `organisertilknytninger` | integer  | id som stammer fra KIS. |
-| `deleted`                | bool     | id som stammer fra KIS. |
-| `origin`                 | integer  | id som stammer fra KIS. |
-| `created`                | integer  | id som stammer fra KIS. |
-| `changed`                | integer  | id som stammer fra KIS. |
+| `navn`                   | text     | Navn på præsten |
+| `navnesuggest`           | search_as_you_type  | Navn til søgning. |
+| `sogne`                  | text     | Sognekoder (separaret af mellemrum), som denne præst arbejder i  |
+| `provstier`              | datetime | Provstikoder fra KIS (separaret af mellemrum), som denne præst arbejder i |
+| `stifte`                 | integer  | Stift(e) fra KIS (separaret af mellemrum), som denne præst arbejder i |
+| `mrkodetilknytninger`    | integer  | Menighedsråd (MR koder fra KIS)(separaret af mellemrum) som denne medarbejder arbejder for. |
+| `stillingskoder`         | integer  | Stillingskode(r) (separaret af mellemrum) som denne præst er ansat under (stammer fra KIS). |
+| `organisertilknytninger` | integer  | id('er) på de organisers (menighedsråd) som denne præst arbejder for. |
+| `deleted`                | bool     | Om denne præst er slettet (aktiv eller ej). |
+| `origin`                 | integer  | Oprindelses. |
+| `created`                | date     | Oprettelsestidspunkt for denne præst i dette system (ikke KIS) |
+| `changed`                | date     | Sidst ændret i unix datetime i millisekunder  |
 
 
 ## Liste over stifter med tilhørende stift ID
 I tilfælde der skal søges på begivenheder eller enheder der findes i bestemte stifter er herunder en liste.
-Denne liste ændres sjældent.
+Denne liste ændres sjældent. Den også findes ved at filtrere på organiser type = 3: 
+https://search-sogn3-prod-xcgf73dauu7twzeh45dhpmsk2a.aos.eu-west-1.on.aws/organiser/_search?q=type:3&size=20&pretty 
 
 | Id   |      Stitfs navn       |          Url           |
 | :--- | :--------------------: | :--------------------: |

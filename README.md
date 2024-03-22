@@ -6,6 +6,7 @@ Søgning med OpenSearch på Sogn.dk data
 - [Webservices til kirkelige begivenheder og andre data fra de danske sogne og kirkelige enheder](#webservices-til-kirkelige-begivenheder-og-andre-data-fra-de-danske-sogne-og-kirkelige-enheder)
   - [Generelt om disse services](#generelt-om-disse-services)
   - [Indhold tilgængeligt i dette åbne API](#indhold-tilgængeligt-i-dette-åbne-api)
+  - [Forskelle fra det gamle ElasticSearch til det nye OpenSearch](#forskelle-fra-det-gamle-elasticsearch-til-det-nye-opensearch)
   - [Typer af data der findes til udtræk:](#typer-af-data-der-findes-til-udtræk)
     - [Begivenheder (`event`)](#begivenheder-event)
       - [Begivenheds felter](#begivenheds-felter)
@@ -34,8 +35,8 @@ Søgning med OpenSearch på Sogn.dk data
 
 ## Generelt om disse services
 
-Disse services er baseret på OpenSearch vers. 2.11.0 Alle data er således gemt i 4 indekse, som er
-offentligt tilgængeligt for GET requests.  
+Disse services er baseret på OpenSearch vers. 2.11.0 Alle data er således gemt i 4 indices, som er
+offentligt tilgængeligt for GET requests (men ikke andre typer).  
 Data opdateres i nær-realtid fra sogn.dk. Data om begivenheder kommer dels fra sognenes egne indtastninger fra det
 administrations interface som sogn.dk tilbyder til oprettelse og redigering af begivenheder (sogn.dk/admin), dels fra de eksterne leverandører som sogne kan have valgt at samarbejde med om deres kalenderløsning, som også synkroniseres med sogn.dk.  
 Grunddata om sogne, provstier, stifter, kirker, menighedsråd og præster kommer fra Kirkeministeriets
@@ -48,13 +49,41 @@ Betegnelsen "begivenhed" bruges i dette dokument som fælles betegnelse for guds
 
 ## Indhold tilgængeligt i dette åbne API
 
-Begivenheder, som er offentligt tilgængelige, kan findes via OpenSearch indeksene `event` `organiser` `mr` og `priest`, fra OpenSearch på denne adresse:
+Begivenheder, som er offentligt tilgængelige, kan findes via OpenSearch indicerne `event` `organiser` `mr` og `priest`, fra OpenSearch på denne adresse:
 
 <https://webservice.sogn.dk/>
 
 Du kan læse dokumentationen til OpenSearch på deres hjemmeside:
 
 <https://opensearch.org/docs/2.11/about/>
+
+## Forskelle fra det gamle ElasticSearch til det nye OpenSearch
+
+Generelt er OpenSearch lavet på baggrund af ElasticSearch version 7. Dvs at man kan bruge langt de fleste af de søgeforespørgsler man brugte på det gamle elasticsearch indeks på det nye opensearch indeks.
+Væsentlige forskelle er at OpenSearch ikke understøtter typer på samme måde som ElasticSearch har gjort det. Når vi i elasticsearch har lavet en søgning efter events via 
+
+<http://es.sogn.dk/sognekalender/event/_search> 
+
+så skal vi med det nye OpenSearch indeks bruge 
+
+<https://webservice.sogn.dk/event/_search>
+
+I OpenSearch har alle records typen _doc, så dette er default og ikke længere en (nødvendig) del af den søgeurl med bruger.
+
+Man skal også være opmærksom på at response svaret er en smule anderledes ift elasticsearch. Primært at total antal hits på en request nu ikke er tilgængelig via:
+
+result["hits"]["total"], da dette nu er et objekt og findes via result["hits"]["total"]["value"] 
+- med mindre man medsender GET parametren: rest_total_hits_as_int (se https://opensearch.org/docs/latest/api-reference/search/)
+
+```json
+{"took":0,"timed_out":false,"_shards":{"total":5,"successful":5,"skipped":0,"failed":0},"hits":{"total":{"value":10000,"relation":"gte"},
+```
+
+Man skal også være opmærksom på at søgning direkte med GET parametre (uden en request body) kræver at man medsender det content-type svar som man gerne vil have tilbage:
+https://opensearch.org/docs/latest/api-reference/common-parameters/#request-body-in-query-string
+
+Altså skal man bruge source som den primære parameter til DSL query og så medtage GET paramtren &source_content_type=application/json
+
 
 ## Typer af data der findes til udtræk:
 
@@ -190,8 +219,7 @@ https://webservice.sogn.dk/priest/
 
 ## Liste over stifter med tilhørende stift ID
 I tilfælde der skal søges på begivenheder eller enheder der findes i bestemte stifter er herunder en liste.
-Denne liste ændres sjældent. Den også findes ved at filtrere på organiser type = 3: 
-https://search-sogn3-prod-xcgf73dauu7twzeh45dhpmsk2a.aos.eu-west-1.on.aws/organiser/_search?q=type:3&size=20&pretty 
+Denne liste ændres sjældent. 
 
 | Id   |      Stitfs navn       |          Url           |
 | :--- | :--------------------: | :--------------------: |
@@ -205,6 +233,25 @@ https://search-sogn3-prod-xcgf73dauu7twzeh45dhpmsk2a.aos.eu-west-1.on.aws/organi
 | 8    |      Århus Stift       |   www.aarhusstift.dk   |
 | 9    |       Ribe Stift       |    www.ribestift.dk    |
 | 10   |    Haderslev Stift     | www.haderslevstift.dk  |
+
+Den kan også findes ved at filtrere på organiser type = 3: 
+
+Med Lucene Query Syntax: (https://lucene.apache.org/core/2_9_4/queryparsersyntax.html)
+https://webservice.sogn.dk/organiser/_search?q=type:3&size=20&pretty 
+
+Eller med DSL Query syntax: (https://opensearch.org/docs/latest/query-dsl/)
+```http
+GET https://webservice.sogn.dk/organiser/_search?source={%22query%22:{%22bool%22:{%22filter%22:[{%22match%22:{%22type%22:3}},{%22match%22:{%22deleted%22:false}}]}},%22sort%22:[{%22stiftid%22:{%22order%22:%22asc%22}}],%22size%22:20}&pretty&source_content_type=application/json
+```
+#### Man vil bemærke at man udover landets 10 stifter også får ”Døvemenigheder”, da de også figurerer som et administrativt stift i KIS.
+
+Man har lidt flere muligheder for filtrering og søgning med DSL query syntax, men det er nok også lidt mere komplekst at sætte korrekt op.
+Læs mere om brug af DSL query via almindelig GET forespørgsler:
+https://opensearch.org/docs/latest/api-reference/common-parameters/#request-body-in-query-string
+Og her om søgning generelt i OpenSearch:
+https://opensearch.org/docs/latest/api-reference/search/
+Hvis man har mulighed for at sende rå data med i sit GET request i det programmeringssprog du bruger så er det lidt nemmere at strikke sammen (det kan man med PHP cUrl og med Postman til tests). 
+Vi har efterfølgende brugt denne request body form, da den er mere læsevenlig. Men den request body kan man altså blot sætte ind som GET parameter (som beskrevet i linket ovenfor og her: https://stackoverflow.com/questions/48358344/convert-elasticsearch-kibana-query-string-format-to-uri-search-format).
 
 ## Kogebog
 
@@ -220,16 +267,10 @@ GET https://webservice.sogn.dk/event/_search
     "bool": {
       "filter": [
         {
-          "bool": {
-            "should": [
-              {
-                "term": {
-  "deleted": {
-    "value": false // Fravælg slettede begivenheder  
-  }
-                }
-              }
-            ]
+          "term": {
+            "deleted": {
+              "value": false // Fravælg slettede begivenheder  
+            }
           }
         },
         {
@@ -271,7 +312,7 @@ GET https://webservice.sogn.dk/event/_search
 **Svar**
 ```json
 {
-    "took": 50,
+    "took": 32,
     "timed_out": false,
     "_shards": {
         "total": 5,
@@ -281,101 +322,101 @@ GET https://webservice.sogn.dk/event/_search
     },
     "hits": {
         "total": {
-            "value": 8,
+            "value": 7,
             "relation": "eq"
         },
         "max_score": null,
         "hits": [
             {
                 "_index": "event-2024-02-28-1425",
-                "_id": "2588909",
+                "_id": "2717329",
                 "_score": null,
                 "_source": {
-    "id": 2588909,
-    "title": "Gudstjeneste v/Test Testersen",
-    "subtitle": "",
-    "shortdescription": "",
-    "description": "",
-    "person": "Test Testersen",
-    "locationname": "Gellerup Kirke",
-    "category": "Højmesse",
-    "kirkeid": 7314,
-    "locationid": 42507,
-    "location": "56.155773,10.133944",
-    "organiserid": 39893,
-    "organisername": "Gellerup Sogn",
-    "sogneid": 9097,
-    "eventtype": 1,
-    "address1": "Gudrunsvej 88",
-    "address2": "",
-    "zip": "8220",
-    "city": "Brabrand",
-    "churchday": "3. s. i advent",
-    "created": 1680605609000,
-    "changed": 1702022718000,
-    "deleted": false,
-    "noenddate": false,
-    "origin": 11,
-    "moreurl": "",
-    "img": "",
-    "online": false,
-    "dawa": "",
-    "kommunenavn": "Aarhus Kommune",
-    "provstiid": 817,
-    "stiftid": 8,
-    "startdate": "2023-12-17 10:00:00",
-    "startdateTS": 1702803600000,
-    "enddate": "2023-12-17 11:30:00",
-    "enddateTS": 1702809000000
+                    "id": 2717329,
+                    "title": "Palmesøndag Familiegudstjeneste",
+                    "subtitle": "",
+                    "shortdescription": "",
+                    "description": "Kom med til gudstjeneste og få hele påskefortællingen fortalt med fortælling, leg og aktiviteter. Gudstjenesten er for hele familien, og samtidigt er det afslutning for minikonfirmanderne. Efter gudstjenesten spiser vi sammen i Sognehuset, og minikonfirmander får overrakt diplomer. Tag gerne hele familien med til festlig familiegudstjeneste og frokost den dag. Maden koster 25 kr., gratis for børn.",
+                    "person": "Tina Iversen",
+                    "locationname": "Erritsø Kirke",
+                    "category": "Familiegudstjeneste",
+                    "kirkeid": 7198,
+                    "locationid": 42394,
+                    "location": "55.547798,9.700200",
+                    "organiserid": 40177,
+                    "organisername": "Erritsø Sogn",
+                    "sogneid": 7913,
+                    "eventtype": 1,
+                    "address1": "Erritsø Bygade 1",
+                    "address2": "Erritsø",
+                    "zip": "7000",
+                    "city": "Fredericia",
+                    "churchday": "Palmesøndag",
+                    "created": 1700138021000,
+                    "changed": 1703682372000,
+                    "deleted": false,
+                    "noenddate": false,
+                    "origin": 11,
+                    "moreurl": "",
+                    "img": "",
+                    "online": false,
+                    "dawa": "",
+                    "kommunenavn": "Fredericia Kommune",
+                    "provstiid": 1004,
+                    "stiftid": 10,
+                    "startdate": "2024-03-24 10:00:00",
+                    "startdateTS": 1711270800000,
+                    "enddate": "2024-03-24 11:00:00",
+                    "enddateTS": 1711274400000
                 },
                 "sort": [
-    1702807200000
+                    1711274400000
                 ]
             },
             {
                 "_index": "event-2024-02-28-1425",
-                "_id": "2596922",
+                "_id": "2717341",
                 "_score": null,
                 "_source": {
-    "id": 2596922,
-    "title": "Gudstjeneste",
-    "subtitle": "",
-    "shortdescription": "",
-    "description": "",
-    "person": "Test Testersen",
-    "locationname": "Gellerup Kirke",
-    "category": "Gudstjeneste",
-    "kirkeid": 7314,
-    "locationid": 42507,
-    "location": "56.155773,10.133944",
-    "organiserid": 39893,
-    "organisername": "Gellerup Sogn",
-    "sogneid": 9097,
-    "eventtype": 1,
-    "address1": "Gudrunsvej 88",
-    "address2": "",
-    "zip": "8220",
-    "city": "Brabrand",
-    "churchday": "",
-    "created": 1682069430000,
-    "changed": 1702894196000,
-    "deleted": false,
-    "noenddate": false,
-    "origin": 11,
-    "moreurl": "",
-    "img": "",
-    "online": false,
-    "dawa": "",
-    "kommunenavn": "Aarhus Kommune",
-    "provstiid": 817,
-    "stiftid": 8,
-    "startdate": "2023-12-22 10:30:00",
-    "startdateTS": 1703237400000,
-    "enddate": "2023-12-22 11:30:00",
-    "enddateTS": 1703241000000
+                    "id": 2717341,
+                    "title": "Skærtorsdag Gudstjeneste",
+                    "subtitle": "",
+                    "shortdescription": "",
+                    "description": "",
+                    "person": "Peter Nikolaj Frøkjær-Jensen",
+                    "locationname": "Erritsø Kirke",
+                    "category": "Gudstjeneste",
+                    "kirkeid": 7198,
+                    "locationid": 42394,
+                    "location": "55.547798,9.700200",
+                    "organiserid": 40177,
+                    "organisername": "Erritsø Sogn",
+                    "sogneid": 7913,
+                    "eventtype": 1,
+                    "address1": "Erritsø Bygade 1",
+                    "address2": "Erritsø",
+                    "zip": "7000",
+                    "city": "Fredericia",
+                    "churchday": "Skærtorsdag",
+                    "created": 1700138212000,
+                    "changed": 1700139404000,
+                    "deleted": false,
+                    "noenddate": false,
+                    "origin": 11,
+                    "moreurl": "",
+                    "img": "",
+                    "online": false,
+                    "dawa": "",
+                    "kommunenavn": "Fredericia Kommune",
+                    "provstiid": 1004,
+                    "stiftid": 10,
+                    "startdate": "2024-03-28 17:00:00",
+                    "startdateTS": 1711641600000,
+                    "enddate": "2024-03-28 18:00:00",
+                    "enddateTS": 1711645200000
                 },
                 "sort": [
-    1703241000000
+                    1711645200000
                 ]
             }
         ]
@@ -425,7 +466,7 @@ $params = array(
 $jsonParams = json_encode($params);
 
 $ch = curl_init();
-curl_setopt($ch, CURLOPT_URL, "https://es.sogn.dk/sognekalender/event/_search");
+curl_setopt($ch, CURLOPT_URL, "https://webservice.sogn.dk/event/_search");
 curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json','Content-Length: ' . strlen($jsonParams)));
@@ -447,13 +488,10 @@ Bemærk at man nemt kan medtage en size og en from parameter til at opdele resul
 #### Begivenheder i bestemt sogn
 [Se alternativ til URL encoding](https://stackoverflow.com/questions/14339696/elasticsearch-post-with-json-search-body-vs-get-with-json-in-url)  
 
-*Bemærk: eksemplerne kan indeholde linjeskift, som ikke bør være i forespørgslen.*
-
 ```curl
-curl -XGET "https://es.sogn.dk/sognekalender/event/_search" -d '{
+curl -XGET "https://webservice.sogn.dk/event/_search" -d '{
   "query": {
     "bool": {
-      "must": [],
       "filter": [
         { "term":  { "deleted": false }},
         { "term":  { "sogneid": 7000 }},
@@ -546,115 +584,105 @@ Exsempel på søgning efter et sogn ud fra et navn.
 [Læs her om Opensearch Query String Syntax](https://opensearch.org/docs/latest/query-dsl/full-text/query-string)
 
 ```curl
-curl -XGET "https://es.sogn.dk/sognekalender/organiser/_search" -d '{
+curl -XGET "https://webservice.sogn.dk/organiser/_search" -d '{
   "query": {
     "bool": {
       "must": [
-        { "match": { "navn": "Gellerup" }}  
+        { "match": { "navn": "Gellerup" }}
       ]
     }
   }
 }'
 ```
 
-Kan også laves som en direkte query string request:
-`curl -XGET "https://webservice.sogn.dk/organiser/_search?q=navn:Gellerup"`  
-*Bemærk at query strengen i parameteren `q` skal url encodes (hvis ikke din browser gør det for dig)*
+Kan også laves som en direkte query string request (med Lucene Query):
+https://webservice.sogn.dk/organiser/_search?q=navn:Gellerup&pretty
 
 Resultatet for begge ovenstående forespørgsler er:
 
 ```json
 {
-  "took": 1,
-  "timed_out": false,
-  "_shards": {
-    "total": 5,
-    "successful": 5,
-    "skipped": 0,
-    "failed": 0
-  },
-  "hits": {
-    "total": {
-      "value": 2,
-      "relation": "eq"
+    "took": 1,
+    "timed_out": false,
+    "_shards": {
+        "total": 5,
+        "successful": 5,
+        "skipped": 0,
+        "failed": 0
     },
-    "max_score": 6.675736,
-    "hits": [
-      {
-        "_index": "organiser-2024-01-17-1325",
-        "_id": "39893",
-        "_score": 6.675736,
-        "_source": {
-          "id": 39893,
-          "type": 1,
-          "stiftid": 8,
-          "provstiid": 817,
-          "organiserid": 39893,
-          "sogneid": 9097,
-          "navn": "Gellerup Sogn",
-          "kommunenavn": "Aarhus Kommune",
-          "sogndkurl": "https://sogn.dk/gellerup",
-          "country": "DK",
-          "ownurl": "www.gellerupkirke.dk",
-          "deleted": false,
-          "changed": 1556632009000,
-          "created": 1387396021000,
-          "aliases": "",
-          "navnesuggest": "Gellerup Sogn fisk",
-          "origin": 1
-        }
-      },
-      {
-        "_index": "organiser-2024-01-17-1325",
-        "_id": "42507",
-        "_score": 6.598057,
-        "_source": {
-          "id": 42507,
-          "type": 5,
-          "stiftid": 8,
-          "provstiid": 817,
-          "organiserid": 42507,
-          "sogneid": 9097,
-          "navn": "Gellerup Kirke",
-          "kommunenavn": "Aarhus Kommune",
-          "sogndkurl": "https://sogn.dk/gellerup",
-          "country": "DK",
-          "ownurl": "",
-          "deleted": false,
-          "changed": 1631837101000,
-          "created": 1387400461000,
-          "aliases": "",
-          "navnesuggest": "Gellerup Kirke",
-          "origin": 1,
-          "address1": "Gudrunsvej 88",
-          "address2": "",
-          "zip": "8220",
-          "city": "Brabrand",
-          "img": "https://sogn.dk/uploads/DyconSogneadmin/Organiser/uid42507-ImageCropped-631c91.jpg",
-          "location": "56.155773,10.133944",
-          "kirkeid": 7314,
-          "sogneorganiserid": 39893
-        }
-      }
-    ]
-  }
+    "hits": {
+        "total": {
+            "value": 2,
+            "relation": "eq"
+        },
+        "max_score": 6.677451,
+        "hits": [
+            {
+                "_index": "organiser-2024-01-17-1325",
+                "_id": "39893",
+                "_score": 6.677451,
+                "_source": {
+                    "id": 39893,
+                    "type": 1,
+                    "stiftid": 8,
+                    "provstiid": 817,
+                    "organiserid": 39893,
+                    "sogneid": 9097,
+                    "navn": "Gellerup Sogn",
+                    "kommunenavn": "Aarhus Kommune",
+                    "sogndkurl": "https://sogn.dk/gellerup",
+                    "country": "DK",
+                    "ownurl": "www.gellerupkirke.dk",
+                    "deleted": false,
+                    "changed": 1556632009000,
+                    "created": 1387396021000,
+                    "aliases": "fisk",
+                    "navnesuggest": "Gellerup Sogn fisk",
+                    "origin": 1
+                }
+            },
+            {
+                "_index": "organiser-2024-01-17-1325",
+                "_id": "42507",
+                "_score": 6.600841,
+                "_source": {
+                    "id": 42507,
+                    "type": 5,
+                    "stiftid": 8,
+                    "provstiid": 817,
+                    "organiserid": 42507,
+                    "sogneid": 9097,
+                    "navn": "Gellerup Kirke",
+                    "kommunenavn": "Aarhus Kommune",
+                    "sogndkurl": "https://sogn.dk/gellerup",
+                    "country": "DK",
+                    "ownurl": "",
+                    "deleted": false,
+                    "changed": 1631837101000,
+                    "created": 1387400461000,
+                    "aliases": "",
+                    "navnesuggest": "Gellerup Kirke",
+                    "origin": 1,
+                    "address1": "Gudrunsvej 88",
+                    "address2": "",
+                    "zip": "8220",
+                    "city": "Brabrand",
+                    "img": "https://sogn.dk/uploads/DyconSogneadmin/Organiser/uid42507-ImageCropped-631c91.jpg",
+                    "location": "56.155773,10.133944",
+                    "kirkeid": 7314,
+                    "sogneorganiserid": 39893
+                }
+            }
+        ]
+    }
 }
 ```
 
-Man får altså 4 hits. Et hit for sognet (type: 1), et hit for kirken i Gellerup (type: 5) og to hits for Gellerup
-Kirke (type: 4).  
-Dette skyldes at der for typen organiser findes seks forskellige typer angivet fra integer feltet type (ikke at
-forveksle med de tidligere omtalte ElasticSearch typer):  
-1: Sogn (KIS),  
-2: Provsti (KIS),  
-3: Stift (KIS),  
-4: Oprettede lokationer fra API leverandørers Sted angivelse  
-5: Kirke (KIS),  
-6: Brugeroprettede lokationer fra sogn.dk/admin  
+Man får altså 2 hits. Et hit for sognet (type: 1), et hit for kirken i Gellerup (type: 5).  
 Hvis man således kun ønsker at søge efter sogne kan man tilføje type: 1 til søgningen:
 
 ```curl
-curl -XGET "https://es.sogn.dk/sognekalender/organiser/_search" -d '{
+curl -XGET "https://webservice.sogn.dk/organiser/_search" -d '{
   "query": {
     "bool": {
       "must": [
@@ -666,11 +694,17 @@ curl -XGET "https://es.sogn.dk/sognekalender/organiser/_search" -d '{
 }'
 ```
 
-Kan også laves som en direkte query string request:  
-```curl
-curl -XGET "https://es.sogn.dk/sognekalender/organiser/_search?source=%7B%0A%20%20%22query%22%3A%20%7B%20%0A%20%20%20%20%22bool%22%3A%20%7B%20%0A%20%20%20%20%20%20%22must%22%3A%20%5B%0A%20%20%20%20%20%20%20%20%7B%20%22match%22%3A%20%7B%20%22navn%22%3A%20%22Gellerup*%22%20%7D%7D%2C%20%20%0A%20%20%20%20%20%20%20%20%7B%20%22match%22%3A%20%7B%20%22type%22%3A%201%20%7D%7D%20%20%0A%20%20%20%20%20%20%5D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A" 
+Kan også laves som en direkte query string request med cUrl (eller direkte i browseren):  
+```curl 
+curl -XGET "https://webservice.sogn.dk/organiser/_search?source=%7B%0A%20%20%22query%22%3A%20%7B%20%0A%20%20%20%20%22bool%22%3A%20%7B%20%0A%20%20%20%20%20%20%22must%22%3A%20%5B%0A%20%20%20%20%20%20%20%20%7B%20%22match%22%3A%20%7B%20%22navn%22%3A%20%22Gellerup*%22%20%7D%7D%2C%20%20%0A%20%20%20%20%20%20%20%20%7B%20%22match%22%3A%20%7B%20%22type%22%3A%201%20%7D%7D%20%20%0A%20%20%20%20%20%20%5D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A&pretty&source_content_type=application/json" 
 ```
 *Bemærk at guery strengen er url encodet direkte ud fra request body (men med source som parameter nu)*
+
+Eller med Lucene syntax:
+```http 
+GET https://webservice.sogn.dk/organiser/_search?q=navn:Gellerup%20AND%20type:1&pretty
+```
+*Bemærk at query strengen i parameteren `q` skal url encodes (hvis ikke din browser gør det for dig). Her bliver mellemrum konverteret til %20*
 
 Resultatet er nu at man kun får Gellerup Sogn i svaret.
 Hvis man kun vil finde kirker, kan man så i stedet sætte type til 5.  
@@ -751,41 +785,47 @@ Resultat på Stift GET
 
 ```json
 {
-  "took": 2,
-  "timed_out": false,
-  "_shards": {
-    "total": 5,
-    "successful": 5,
-    "failed": 0
-  },
-  "hits": {
-    "total": 1,
-    "max_score": 0.0,
-    "hits": [
-      {
-        "_index": "sognekalender-2022-06-24-01:55",
-        "_type": "organiser",
-        "_id": "54165",
-        "_score": 0.0,
-        "_source": {
-          "id": 54165,
-          "type": 3,
-          "stiftid": 1,
-          "provstiid": 0,
-          "organiserid": 54165,
-          "sogneid": 0,
-          "navn": "Københavns Stift",
-          "kommunenavn": "",
-          "sogndkurl": "",
-          "country": "DK",
-          "ownurl": "www.kobenhavnsstift.dk",
-          "deleted": false,
-          "changed": 1556632009000,
-          "origin": 1
-        }
-      }
-    ]
-  }
+    "took": 1,
+    "timed_out": false,
+    "_shards": {
+        "total": 5,
+        "successful": 5,
+        "skipped": 0,
+        "failed": 0
+    },
+    "hits": {
+        "total": {
+            "value": 1,
+            "relation": "eq"
+        },
+        "max_score": 0.0,
+        "hits": [
+            {
+                "_index": "organiser-2024-01-17-1325",
+                "_id": "54165",
+                "_score": 0.0,
+                "_source": {
+                    "id": 54165,
+                    "type": 3,
+                    "stiftid": 1,
+                    "provstiid": 0,
+                    "organiserid": 54165,
+                    "sogneid": 0,
+                    "navn": "Københavns Stift",
+                    "kommunenavn": "",
+                    "sogndkurl": "",
+                    "country": "DK",
+                    "ownurl": "www.kobenhavnsstift.dk",
+                    "deleted": false,
+                    "changed": 1556632009000,
+                    "created": 1401787646000,
+                    "aliases": "",
+                    "navnesuggest": "Københavns Stift",
+                    "origin": 1
+                }
+            }
+        ]
+    }
 }
 ```
 
@@ -793,49 +833,25 @@ Resultat på Stift GET
 Ønsker man at begrænse resultatet til alle provstier eller stifte kan man således sætte et filter på typen (med 2 for
 provstier og 3 for stifte).
 
-Med denne forespørgsel fås således landets stifter:
-
-```curl
-curl -XGET "https://es.sogn.dk/sognekalender/organiser/_search" -d '{"query":{
- "bool":{
-   "must":[],
-   "filter":[
-      {"term":{"deleted": false}},
-      {"type":{"value":"organiser"}},
-      {"term":{"type":3}}
-   ]
- }
-}}'
-```
-
-Man vil bemærke at man udover landets 10 stifter også får ”Døvemenigheder”, da de også figurerer som et administrativt stift i KIS.
-
 ### Kirke GET eksempler
 
 ```http request
-GET https://es.sogn.dk/sognekalender/organiser/_search
+GET https://webservice.sogn.dk/organiser/_search
 ```
 Json Body
 ```json
 {
   "query": {
     "bool": {
-      "must": [],
       "filter": [
         {
-          "term": {
-            "type": 5
-          }
+          "term": { "type": 5 }
         },
         {
-          "term": {
-            "deleted": false
-          }
+          "term": { "deleted": false }
         },
         {
-          "term": {
-            "zip": "8000"
-          }
+          "term": { "zip": "8000" }
         }
       ]
     }
@@ -851,93 +867,103 @@ Json Body
 Svar
 ```json
 {
-  "took": 1,
-  "timed_out": false,
-  "_shards": {
-    "total": 5,
-    "successful": 5,
-    "failed": 0
-  },
-  "hits": {
-    "total": 9,
-    "max_score": null,
-    "hits": [
-      {
-        "_index": "sognekalender-2022-06-24-01:55",
-        "_type": "organiser",
-        "_id": "41847",
-        "_score": null,
-        "_source": {
-          "id": 41847,
-          "type": 5,
-          "stiftid": 8,
-          "provstiid": 801,
-          "organiserid": 41847,
-          "sogneid": 8132,
-          "navn": "Sankt Lukas Kirke",
-          "kommunenavn": "Aarhus Kommune",
-          "sogndkurl": "https://sogn.dk/sanktlukas-aarhus",
-          "country": "DK",
-          "ownurl": "",
-          "deleted": false,
-          "changed": 1631837101000,
-          "origin": 1,
-          "address1": "Skt.Lukas Kirkeplads 1",
-          "address2": "",
-          "zip": "8000",
-          "city": "Aarhus C",
-          "img": "https://sogn.dk/uploads/DyconSogneadmin/Organiser/8132_6603_1383140270.jpg",
-          "location": "56.144753,10.193872",
-          "kirkeid": 6603
+    "took": 1,
+    "timed_out": false,
+    "_shards": {
+        "total": 5,
+        "successful": 5,
+        "skipped": 0,
+        "failed": 0
+    },
+    "hits": {
+        "total": {
+            "value": 9,
+            "relation": "eq"
         },
-        "sort": [
-          8132
+        "max_score": null,
+        "hits": [
+            {
+                "_index": "organiser-2024-01-17-1325",
+                "_id": "41847",
+                "_score": null,
+                "_source": {
+                    "id": 41847,
+                    "type": 5,
+                    "stiftid": 8,
+                    "provstiid": 801,
+                    "organiserid": 41847,
+                    "sogneid": 8132,
+                    "navn": "Sankt Lukas Kirke",
+                    "kommunenavn": "Aarhus Kommune",
+                    "sogndkurl": "https://sogn.dk/sanktlukas-aarhus",
+                    "country": "DK",
+                    "ownurl": "",
+                    "deleted": false,
+                    "changed": 1631837101000,
+                    "created": 1387400461000,
+                    "aliases": "",
+                    "navnesuggest": "Sankt Lukas Kirke",
+                    "origin": 1,
+                    "address1": "Skt.Lukas Kirkeplads 1",
+                    "address2": "",
+                    "zip": "8000",
+                    "city": "Aarhus C",
+                    "img": "https://sogn.dk/uploads/DyconSogneadmin/Organiser/8132_6603_1383140270.jpg",
+                    "location": "56.144753,10.193872",
+                    "kirkeid": 6603,
+                    "sogneorganiserid": 39575
+                },
+                "sort": [
+                    8132
+                ]
+            },
+            {
+                "_index": "organiser-2024-01-17-1325",
+                "_id": "41843",
+                "_score": null,
+                "_source": {
+                    "id": 41843,
+                    "type": 5,
+                    "stiftid": 8,
+                    "provstiid": 801,
+                    "organiserid": 41843,
+                    "sogneid": 8120,
+                    "navn": "Sankt Johannes Kirke",
+                    "kommunenavn": "Aarhus Kommune",
+                    "sogndkurl": "https://sogn.dk/sanktjohannes-aarhus",
+                    "country": "DK",
+                    "ownurl": "",
+                    "deleted": false,
+                    "changed": 1631837101000,
+                    "created": 1387400461000,
+                    "aliases": "",
+                    "navnesuggest": "Sankt Johannes Kirke",
+                    "origin": 1,
+                    "address1": "Peter Sabroes Gade 20",
+                    "address2": "",
+                    "zip": "8000",
+                    "city": "Aarhus C",
+                    "img": "https://sogn.dk/uploads/DyconSogneadmin/Organiser/8120_6599_1393320149.jpg",
+                    "location": "56.169144,10.210092",
+                    "kirkeid": 6599,
+                    "sogneorganiserid": 39573
+                },
+                "sort": [
+                    8120
+                ]
+            }
         ]
-      },
-      {
-        "_index": "sognekalender-2022-06-24-01:55",
-        "_type": "organiser",
-        "_id": "41843",
-        "_score": null,
-        "_source": {
-          "id": 41843,
-          "type": 5,
-          "stiftid": 8,
-          "provstiid": 801,
-          "organiserid": 41843,
-          "sogneid": 8120,
-          "navn": "Sankt Johannes Kirke",
-          "kommunenavn": "Aarhus Kommune",
-          "sogndkurl": "https://sogn.dk/sanktjohannes-aarhus",
-          "country": "DK",
-          "ownurl": "",
-          "deleted": false,
-          "changed": 1631837101000,
-          "origin": 1,
-          "address1": "Peter Sabroes Gade 20",
-          "address2": "",
-          "zip": "8000",
-          "city": "Aarhus C",
-          "img": "https://sogn.dk/uploads/DyconSogneadmin/Organiser/8120_6599_1393320149.jpg",
-          "location": "56.169144,10.210092",
-          "kirkeid": 6599
-        },
-        "sort": [
-          8120
-        ]
-      }
-    ]
-  }
+    }
 }
 ```
 
 ### Udtræk af Menighedsråd (`mr`)
 
-`mr` typen viser udvalgt data om alle landets menighedsråd (små 2000). Ved at kalde _mapping:
+`mr` typen viser udvalgt data om alle landets menighedsråd (små 2000). Du kan se hvilke felter der findes ved at kalde _mapping:
 `https://webservice.sogn.dk/mr/_mapping`
 
 En søgning uden filtre eller parametre vil give et resultat på alle landets menighedsråd (dog begrænset til de første 10
-da det er standard når size parameteret udelades).  
+da det er default når size parameteret udelades).  
 `https://webservice.sogn.dk/mr/_search`  
 
 Resultat herunder vises blot det første

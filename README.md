@@ -1,165 +1,297 @@
-# Webservices til kirkelige begivenheder fra de danske sogne og kirkelige enheder
+# Webservices til kirkelige begivenheder og andre data fra de danske sogne og kirkelige enheder
 
-(ElasticSearch version)
+Søgning med OpenSearch på Sogn.dk data
 
 <!-- TOC -->
-* [Webservices til kirkelige begivenheder fra de danske sogne og kirkelige enheder](#webservices-til-kirkelige-begivenheder-fra-de-danske-sogne-og-kirkelige-enheder)
-  * [Generelt om disse services](#generelt-om-disse-services)
-    * [Forældede services](#forældede-services)
-  * [Begivenheder (typen event)](#begivenheder--typen-event-)
-    * [Sammenligning af felter fra gamle services](#sammenligning-af-felter-fra-gamle-services)
-    * [Eksempel på forespørgsel og svar<a href="#3-alternativ-til-url-encoding"><sup>3</sup></a>](#eksempel-på-forespørgsel-og-svar-a-href3-alternativ-til-url-encoding-sup-3-sup-a)
-  * [Sogne, kirker og lokationer (typen organiser)](#sogne-kirker-og-lokationer--typen-organiser-)
-    * [Organiser felter](#organiser-felter)
-    * [Sogne, Provstier og Stifte GET eksempler](#sogne-provstier-og-stifte-get-eksempler)
-      * [Json body til søgning efter Sogn på `sogneid`](#json-body-til-søgning-efter-sogn-på-sogneid)
-      * [Json body til søgning efter Provsti på `provstiid`](#json-body-til-søgning-efter-provsti-på-provstiid)
-      * [Json body til søgning efter Stift på `StiftID`](#json-body-til-søgning-efter-stift-på-stiftid)
-    * [Kirke GET eksempler](#kirke-get-eksempler)
-  * [Menighedsråd (typen mr)](#menighedsråd--typen-mr-)
-  * [Præster (typen priest)](#præster--typen-priest-)
-    * [Eksempel på forespørgsel efter præster for et givent sogn](#eksempel-på-forespørgsel-efter-præster-for-et-givent-sogn)
-  * [Debug og test med Postman](#debug-og-test-med-postman)
-  * [Kontakt](#kontakt)
-  * [Referencer](#referencer)
-    * [1 Gamle feeds](#1-gamle-feeds)
-    * [2 Stackoverflow GET request med body](#2-stackoverflow-get-request-med-body)
-    * [3 Alternativ til url encoding](#3-alternativ-til-url-encoding)
-    * [4 Se ElasticSearch query string Syntax](#4-se-elasticsearch-query-string-syntax)
-    * [5 Url encoding](#5-url-encoding)
-    * [6 Bemærk query strengen](#6-bemærk-query-strengen)
-  * [Ændringslog](#ændringslog)
-    * [Version 4.1.0](#version-410)
-    * [Version 4.0.3](#version-403)
-    * [Version 4.0.2, udgivet 22-11-2021](#version-402-udgivet-22-11-2021)
-    * [Version 4.0.1, udgivet 15-3-2021](#version-401-udgivet-15-3-2021)
-    * [Version 3.0.3, udgivet 11-6-2019](#version-303-udgivet-11-6-2019)
-    * [Version 3.0.2, udgivet 29-5-2017](#version-302-udgivet-29-5-2017)
-    * [Version 3.0.1, udgivet 22-5-2017](#version-301-udgivet-22-5-2017)
+- [Webservices til kirkelige begivenheder og andre data fra de danske sogne og kirkelige enheder](#webservices-til-kirkelige-begivenheder-og-andre-data-fra-de-danske-sogne-og-kirkelige-enheder)
+  - [Generelt om disse services](#generelt-om-disse-services)
+  - [Indhold tilgængeligt i dette åbne API](#indhold-tilgængeligt-i-dette-åbne-api)
+  - [Forskelle fra det gamle ElasticSearch til det nye OpenSearch](#forskelle-fra-det-gamle-elasticsearch-til-det-nye-opensearch)
+  - [Typer af data der findes til udtræk:](#typer-af-data-der-findes-til-udtræk)
+    - [Begivenheder (`event`)](#begivenheder-event)
+      - [Begivenheds felter](#begivenheds-felter)
+    - [Enheder (`organiser`)](#enheder-organiser)
+      - [Organiser felter](#organiser-felter)
+    - [Menighedsråd (`mr`)](#menighedsråd-mr)
+      - [Menighedsråd felter](#menighedsråd-felter)
+    - [Præster (`priest`)](#præster-priest)
+      - [Præst felter](#præst-felter)
+  - [Liste over stifter med tilhørende stift ID](#liste-over-stifter-med-tilhørende-stift-id)
+  - [Kogebog](#kogebog)
+    - [Udtræk af begivenheder med eksempler](#udtræk-af-begivenheder-med-eksempler)
+      - [Gudstjenester i et bestemt Sogn, 3 måneder frem.](#gudstjenester-i-et-bestemt-sogn-3-måneder-frem)
+      - [Begivenheder i bestemt sogn](#begivenheder-i-bestemt-sogn)
+    - [Udtræk af Sogne, kirker og enheder (`organiser`)](#udtræk-af-sogne-kirker-og-enheder-organiser)
+      - [Json body til søgning efter Sogn på `sogneid`](#json-body-til-søgning-efter-sogn-på-sogneid)
+      - [Json body til søgning efter Provsti på `provstiid`](#json-body-til-søgning-efter-provsti-på-provstiid)
+      - [Json body til søgning efter Stift på `StiftID`](#json-body-til-søgning-efter-stift-på-stiftid)
+    - [Kirke GET eksempler](#kirke-get-eksempler)
+    - [Udtræk af Menighedsråd (`mr`)](#udtræk-af-menighedsråd-mr)
+    - [Udtræk af Præster (`priest`)](#udtræk-af-præster-priest)
+      - [Eksempel på forespørgsel efter præster for et givent sogn](#eksempel-på-forespørgsel-efter-præster-for-et-givent-sogn)
+  - [Debug og test med Postman](#debug-og-test-med-postman)
+  - [Kontakt](#kontakt)
 <!-- TOC -->
 
 ## Generelt om disse services
 
-Disse services er baseret på ElasticSearch vers. 5.1. Alle data er således gemt i et elasticsearch indeks, som er
-offentligt tilgængeligt for GET requests.  
+Disse services er baseret på OpenSearch vers. 2.11.0 Alle data er således gemt i 4 indices, som er
+offentligt tilgængeligt for GET requests (men ikke andre typer).  
 Data opdateres i nær-realtid fra sogn.dk. Data om begivenheder kommer dels fra sognenes egne indtastninger fra det
-web-interface som sogn.dk tilbyder til oprettelse og redigering af begivenheder (sogn.dk/admin), dels fra de eksterne
-leverandører som sogne kan have valgt at samarbejde med om deres kalenderløsning, som også synkroniseres med sogn.dk.
+administrations interface som sogn.dk tilbyder til oprettelse og redigering af begivenheder (sogn.dk/admin), dels fra de eksterne leverandører som sogne kan have valgt at samarbejde med om deres kalenderløsning, som også synkroniseres med sogn.dk.  
 Grunddata om sogne, provstier, stifter, kirker, menighedsråd og præster kommer fra Kirkeministeriets
 Informationssystem (KIS), som der synkroniseres med hver nat.  
+
 Denne dokumentation beskriver de data der kan hentes og viser nogle eksempler på hvordan data kan trækkes ud.  
 Disse services leverer alle data i UTF-8 format.  
-Der er skelet noget til gamle feltnavne – under navngivningen af nye felter, men der er altså ikke 100% bagud
-kompatibilitet med feltnavne. Se hvordan feltnavne fra de ”gamle” webservices relaterer sig til de nye navne i tabellen
-i næste afsnit.  
-Betegnelsen begivenhed bruges i dette dokument som fælles betegnelse for gudstjenester og arrangementer, selvom det ikke
-er det samme, men har et stort sammenfald af egenskaber.
+Betegnelsen "begivenhed" bruges i dette dokument som fælles betegnelse for gudstjenester og arrangementer, selvom det ikke er det samme, men har et stort sammenfald af egenskaber.
 
-### Forældede services
 
-Vi har i nogle år stillet data tilgængeligt via Yahoos proxy "sky-tjeneste" YQL. Denne service er nu lukket ned og det
-opfordres til at bruge de services beskrevet her.  
-De ”gamle” services til at udtrække data om arrangementer og gudstjenester<a href="#1-gamle-feeds"><sup>1</sup></a>
-er forældede og forventes udfaset i løbet af 2020. Der er meget bedre svar-tider og søgemuligheder i de heri beskrevne
-ElasticSearch indices, end i de gamle services.  
-Ligeledes vil udtræk af data om præster, sogne og kirker med fordel kunne trækkes via det beskrevne ElasticSearch
-indeks. Mere om det i de næste afsnit.
+## Indhold tilgængeligt i dette åbne API
 
-## Begivenheder (typen event)
+Begivenheder, som er offentligt tilgængelige, kan findes via OpenSearch indicerne `event` `organiser` `mr` og `priest`, fra OpenSearch på denne adresse:
 
-Begivenheder, som er offentligt tilgængelige, kan findes via ElasticSearch indekset, sognekalender, fra ElasticSearch på
-denne adresse:
+<https://webservice.sogn.dk/>
 
-<https://es.sogn.dk/>
+Du kan læse dokumentationen til OpenSearch på deres hjemmeside:
 
-Der henvises til dokumentationen på ElasticSearch hjemmesiden:
+<https://opensearch.org/docs/2.11/about/>
 
-<https://www.elastic.co/guide/en/elasticsearch/reference/5.1/index.html>
+## Forskelle fra det gamle ElasticSearch til det nye OpenSearch
 
-- Hvor man skal være opmærksom på at det, pt. er version 5.1 af ElasticSearch vi benytter os af.
+Generelt er OpenSearch lavet på baggrund af ElasticSearch version 7. Dvs at man kan bruge langt de fleste af de søgeforespørgsler man brugte på det gamle elasticsearch indeks på det nye opensearch indeks.
+Væsentlige forskelle er at OpenSearch ikke understøtter typer på samme måde som ElasticSearch har gjort det. Når vi i elasticsearch har lavet en søgning efter events via 
 
-Man kan se hvilke ”typer” der er i indekset og hvordan deres mapping er ved at forespørge denne adresse:
+<http://es.sogn.dk/sognekalender/event/_search> 
 
-<https://es.sogn.dk/sognekalender/_mappings>
+så skal vi med det nye OpenSearch indeks bruge 
 
-Her fremgår det at der er fire typer; event, organiser, mr og priest. Et event har nogenlunde følgende properties:
+<https://webservice.sogn.dk/event/_search>
 
-```
-  "address1": {"type": "text"},
-  "address2": {"type": "text"},
-  "category": {"type": "keyword"},
-  "changed": {"type": "date"},
-  "churchday": {"type": "text"},
-  "city": {"type": "text"},
-  "country": {"type": "keyword","null_value": "DK"},
-  "created": {"type": "date"},
-  "description": {"type": "text"},
-  "enddate": {"type": "date","format": "dateOptionalTime||yyyy-MM-dd HH:mm:ss"},
-  "enddateTS": {"type": "date"},
-  "eventtype": {"type": "integer"},
-  "id": {"type": "integer"},
-  "img": {"type": "text"},
-  "kirkeid": {"type": "integer"},
-  "kommunenavn": {"type": "text"},
-  "location": {"type": "geo_point","ignore_malformed": true},
-  "locationid": {"type": "integer"},
-  "locationname": {"type": "text","fields": {"raw": {"type": "keyword"},
-  "moreurl": {"type": "text"},
-  "noenddate": {"type": "boolean"},
-  "organiserid": {"type": "integer"},
-  "organisername": {"type": "text"},
-  "origin": {"type": "integer"},
-  "person": {"type": "text"},
-  "provstiid": {"type": "integer"},
-  "deleted": {"type": "boolean"},
-  "shortdescription": {"type": "text"},
-  "sogneid": {"type": "integer"},
-  "startdate":{"type":"date","format":"dateOptionalTime||yyyy-MM-dd HH:mm:ss"},
-  "startdateTS": {"type": "date"},
-  "stiftid": {"type": "integer"},
-  "subtitle": {"type": "text"},
-  "title": {"type": "text"},
-  "zip": {"type": "text"},
-  "online": {"type": "boolean"},
-  "dawa" : {"type":"text"}
+I OpenSearch har alle records typen _doc, så dette er default og ikke længere en (nødvendig) del af den søgeurl med bruger.
+
+Man skal også være opmærksom på at response svaret er en smule anderledes ift elasticsearch. Primært at total antal hits på en request nu ikke er tilgængelig via:
+
+result["hits"]["total"], da dette nu er et objekt og findes via result["hits"]["total"]["value"] 
+- med mindre man medsender GET parametren: rest_total_hits_as_int (se https://opensearch.org/docs/latest/api-reference/search/)
+
+```json
+{"took":0,"timed_out":false,"_shards":{"total":5,"successful":5,"skipped":0,"failed":0},"hits":{"total":{"value":10000,"relation":"gte"},
 ```
 
-De fleste af disse felter er selvforklarende. I næste afsnit sammenlignes de fleste felter med felterne fra de tidligere
-services.  
-Tidligere skulle man hente data om gudstjenester og arrangementer fra to separate services. Det behøver man ikke
-længere. Man kan dog nemt filtrere sin søgning til kun at returnere data om den ene eller anden type af begivenheder.  
-For at få den kommende måneds gudstjenester for et givent sogn kan man sende en GET request med nedenstående request
-Body til:
+Man skal også være opmærksom på at søgning direkte med GET parametre (uden en request body) kræver at man medsender det content-type svar som man gerne vil have tilbage:
+https://opensearch.org/docs/latest/api-reference/common-parameters/#request-body-in-query-string
 
-`https://es.sogn.dk/sognekalender/event/_search -d '`
+Altså skal man bruge source som den primære parameter til DSL query og så medtage GET paramtren &source_content_type=application/json
 
+
+## Typer af data der findes til udtræk:
+
+### Begivenheder (`event`)
+
+https://webservice.sogn.dk/event/
+
+#### Begivenheds felter
+
+|           Feltnavn | Felttype       | Forklaring    |
+| :----------------- | -------------- | ------------- |
+|               `id` | integer        | Unikt ID for begivenheden. |
+|            `title` | text           | Titlen på begivenheden. |
+|         `subtitle` | text           | Undertitlen på begivenheden. (eksperimentel)|
+|      `description` | text           | En detaljeret beskrivelse af begivenheden. |
+| `shortdescription` | text           | En kort beskrivelse af begivenheden. |
+|           `person` | text           | Navnet på prædikanten/personen, der er tilknyttet begivenheden. |
+|         `category` | keyword        | Kategorien af begivenheden (f.eks. "Gudstjeneste"). |
+|     `locationname` | text           | Navnet på stedet, hvor begivenheden finder sted. |
+|          `kirkeid` | integer        | Unikt ID for kirker. (id til organiser indekset) |
+|       `locationid` | integer        | Unikt ID for lokationen. (id til organiser indekset) |
+|         `location` | geo_point      | Geografisk lokation af begivenheden som et geo_point. |
+|      `organiserid` | integer        | Unikt ID for arrangøren af begivenheden (id til organiser indekset) |
+|    `organisername` | integer        | Navnet på enheden |
+|          `sogneid` | integer        | 4 cifret Myndighedskode (fra KIS) |
+|        `eventtype` | integer        | Type af begivenhed, se begivenheds typer |
+|         `address1` | text           | Adresse linje 1 |
+|         `address2` | text           | Adresse linje 2 |
+|              `zip` | text           | Postnummer |
+|             `city` | text           | Bynavn |
+|        `churchday` | text           | Dagens navn i kirkeåret |
+|          `created` | datetime       | Tidspunkt hvor begivenheden er oprettet i systemet |
+|          `changed` | datetime       | Tidspunkt for seneste ændring af begivenheden |
+|          `deleted` | boolean        | Om begivenheden er blevet slettet |
+|        `noenddate` | boolean        | Om begivenheden er sat til at skjule sluttidspunktet (uden sluttid) |
+|           `origin` | integer        | Oprettelses oprindelse (intern angivelse). |
+|          `moreurl` | text           | Link til at læse mere |
+|           `online` | boolean        | Om begivenheden afholdes online, eventuelt som supplement |
+|             `dawa` | text           | Unikt Dawa ID for adgangsadressen (Endnu ikke i drift) Eksperimentel! Man kan ikke regne med at denne værdi er sat. <br> Adgangsadressens unikke id, f.eks. 0a3f5095-45ec-32b8-e044-0003ba298018 som anvendt af DAWA <br> Se <https://dawadocs.dataforsyningen.dk/dok/api/adgangsadresse> feltet id. <br> Vil nok kun være sat / relevant for lokationer (typen 4,5,6). |
+|      `kommunenavn` | text           | Kommune navn |
+|        `provstiid` | integer        | Unik provsti ID (fra KIS) |
+|          `stiftid` | integer        | Unik stift ID (fra KIS), se listen over stifter  |
+|        `startdate` | date           | Startdato og -tid for begivenheden. Format: yyyy-MM-dd HH:mm:ss  i lokaltid (CET/CEST) |
+|      `startdateTS` | datetime       | Startdato og -tid for begivenheden. unix timestamp i millisekunder |
+|          `enddate` | date           | Slutdato og -tid for begivenheden. Format: yyyy-MM-dd HH:mm:ss  i lokaltid (CET/CEST) |
+|        `enddateTS` | datetime       | Slutdato og -tid for begivenheden. unix timestamp i millisekunder |
+|          `country` | text           | Landekode, normalt blot DK |
+|              `img` | text           | URL til et billede for begivenheden (endnu ikke understøttet) |
+|    `opencommunity` | boolean        | Om begivenheden er angivet som et åbent fællesskab (eksperimentel) |
+
+### Enheder (`organiser`)
+https://webservice.sogn.dk/organiser/
+
+Sogne, kirker, lokationer og arrangører
+
+#### Organiser felter
+
+|  Feltnavn          | Felttype  | Forklaring|
+|:------------------ | --------- | ------------------------------------------ |
+| `id`               | interger  | Organiser id. Et unikt id på tværs af de forskellige organiser typer. |
+| `type`             | integer   | Typen af organiser: <br> 1: Sogn (KIS), <br> 2: Provsti (KIS), <br> 3: Stift (KIS), <br> 4: Oprettede lokationer fra API leverandørers Sted angivelse <br> 5: Kirke (KIS), <br> 6: Brugeroprettet lokation fra sogn.dk/admin, <br> 7: Brugeroprettede personer |
+| `stiftid`          | integer   | Stiftets myndighedskode (fra KIS) |
+| `provstiid`        | integer   | Provstiets myndighedskode (fra KIS) |
+| `organiserids`     | integer   | De Organiser ID'er som et evt sogn/menighedsråd er tilknyttet (kommasepareret) |
+| `sogneid`          | integer   | Sognets myndighedskode (fra KIS). |
+| `navn`             | text      | Navnet på organiser/lokation (som kan være af forskellig type). Se type. |
+| `kommunenavn`      | text      | Kommunenavn som denne organiser er placeret i |
+| `sogndkurl`        | text      | URL som et sogn har på sogn.dk (feks: sogn.dk/gellerup) Er primært relevant for sogne (typen 1). |
+| `country`          | text      | Landekode, normalt blot DK |
+| `ownurl`           | text      | URL for egen hjemmeside. Dette er primært relevant/sat for sogne (type = 1). |
+| `deleted`          | boolean   | Om enheden er blevet slettet |
+| `changed`          | datetime  | Unix timestamp i millisekunder. Man kan bruge alle "date" funktioner til at indsnævre en søgning via dette felt. Feltet angiver hvornår en organiser sidst er ændret. |
+| `created`          | datetime  | Hvornår denne organiser er oprettet i systemet |
+| `aliases`          | text      | Meta felt. Alias for denne organiser (til alternativ stavning ifm søgning). |
+| `navnesuggest`     | search_as_you_type | Meta felt. Til søgning (https://opensearch.org/docs/latest/field-types/supported-field-types/search-as-you-type/) |
+| `origin`           | integer   | Meta felt som vi bruger til at bestemme hvorfra en organiser er kommet ind til OpenSearch fra. Kan ignoreres. |
+| `address1`         | text      | Adresse linje 1 |
+| `address2`         | text      | Adresse linje 2 |
+| `zip`              | text      | Postnummer |
+| `city`             | text      | Bynavn |
+| `img`              | text      | Link til billede for enhed, somregel kun sat på kirker |
+| `location`         | geo_point | Geo koordinatorne på enheden <br> Det er ikke alle lokationer der har koordinater, men kirker og en del andre har. Lokationer af typen 4 (oprettet via API) har næsten aldrig koordinater. Ej heller sogne, provstier og stifte (typerne 1,2 og 3). |
+| `kirkeid`          | integer   | id som stammer fra KIS. Vil kun være sat for kirker. |
+| `sogneorganiserid` | text      | Tilknyttet sogn, findes på kirker og brugeroprettede lokationer |
+| `dawa`             | text      | Unikt Dawa ID for adgangsadressen (Eksperimentel). Man kan ikke regne med at denne værdi er sat. <br> Adgangsadressens unikke id, f.eks. 0a3f5095-45ec-32b8-e044-0003ba298018 som anvendt af DAWA <br> Se <https://dawadocs.dataforsyningen.dk/dok/api/adgangsadresse> feltet id. <br> Vil nok kun være sat / relevant for lokationer (typen 4,5,6). |
+
+### Menighedsråd (`mr`)
+https://webservice.sogn.dk/mr/
+
+Menighedsråd og oplysninger derom
+
+#### Menighedsråd felter
+
+|  Feltnavn      | Felttype | Forklaring |
+| :------------- | -------- | ------------------------------- |
+| `navn`         | text     | Navn på menighedsrådet |
+| `kommunenavn`  | text     | Kommunenavn som menighedsrådet er placeret i |
+| `changed`      | datetime | Sidst ændret i unix datetime i millisekunder |
+| `mrkode`       | integer  | Myndighedskoden for menighedsrådet |
+| `id`           | integer  | ID for menighedsrådet, som regel samme som mrkode |
+| `organiserids` | integer  | Organiser ID (kommasepareret hvis der flere) som dette menighedsråd er tilknyttet |
+| `navnesuggest` | search_as_you_type | Menighedsråds navn og kommunenavn sat sammen, til søgning |
+| `type`         | integer  | Type. 11 for menighedsråd, 8 for Samarbejder (juridiske enheder der har et samarbejde med et menighedsråd - fra KIS) |
+| `email`        | text     | Emailadresse på menighedsrådet |
+| `sognenames`   | text     | Sognenavn(e) på tilhørende sogne |
+| `sogneids`     | integer  | Sognekode(r) tilknyttet dette Menighedsråd |
+| `sogndkurls`   | text     | Sogne-webadresser for de sogne som dette menighedsråd omfatter på sogn.dk |
+| `deleted`      | bool     | Om det er slettet. |
+| `origin`       | integer  | oprindelses id. Internt. |
+
+
+### Præster (`priest`)
+https://webservice.sogn.dk/priest/
+
+#### Præst felter
+
+| Feltnavn                 | Felttype | Forklaring|
+| :----------------------- | -------- | ----------------------- |
+| `id`                     | integer  | id som stammer fra KIS. |
+| `navn`                   | text     | Navn på præsten |
+| `navnesuggest`           | search_as_you_type  | Navn til søgning. |
+| `sogne`                  | text     | Sognekoder (separaret af mellemrum), som denne præst arbejder i  |
+| `provstier`              | datetime | Provstikoder fra KIS (separaret af mellemrum), som denne præst arbejder i |
+| `stifte`                 | integer  | Stift(e) fra KIS (separaret af mellemrum), som denne præst arbejder i |
+| `mrkodetilknytninger`    | integer  | Menighedsråd (MR koder fra KIS)(separaret af mellemrum) som denne medarbejder arbejder for. |
+| `stillingskoder`         | integer  | Stillingskode(r) (separaret af mellemrum) som denne præst er ansat under (stammer fra KIS). |
+| `organisertilknytninger` | integer  | id('er) på de organisers (menighedsråd) som denne præst arbejder for. |
+| `deleted`                | bool     | Om denne præst er slettet (aktiv eller ej). |
+| `origin`                 | integer  | Oprindelses. |
+| `created`                | date     | Oprettelsestidspunkt for denne præst i dette system (ikke KIS) |
+| `changed`                | date     | Sidst ændret i unix datetime i millisekunder  |
+
+
+## Liste over stifter med tilhørende stift ID
+I tilfælde der skal søges på begivenheder eller enheder der findes i bestemte stifter er herunder en liste.
+Denne liste ændres sjældent. 
+
+| Id   |      Stitfs navn       |          Url           |
+| :--- | :--------------------: | :--------------------: |
+| 1    |    Københavns Stift    | www.kobenhavnsstift.dk |
+| 2    |    Helsingør Stift     | www.helsingoerstift.dk |
+| 3    |     Roskilde Stift     |  www.roskildestift.dk  |
+| 4    | Lolland-Falsters Stift |     www.lfstift.dk     |
+| 5    |      Fyens Stift       |   www.fyensstift.dk    |
+| 6    |     Aalborg Stift      |  www.aalborgstift.dk   |
+| 7    |      Viborg Stift      |   www.viborgstift.dk   |
+| 8    |      Århus Stift       |   www.aarhusstift.dk   |
+| 9    |       Ribe Stift       |    www.ribestift.dk    |
+| 10   |    Haderslev Stift     | www.haderslevstift.dk  |
+
+Den kan også findes ved at filtrere på organiser type = 3: 
+
+Med Lucene Query Syntax: (https://lucene.apache.org/core/2_9_4/queryparsersyntax.html)
+https://webservice.sogn.dk/organiser/_search?q=type:3&size=20&pretty 
+
+Eller med DSL Query syntax: (https://opensearch.org/docs/latest/query-dsl/)
+```http
+GET https://webservice.sogn.dk/organiser/_search?source={%22query%22:{%22bool%22:{%22filter%22:[{%22match%22:{%22type%22:3}},{%22match%22:{%22deleted%22:false}}]}},%22sort%22:[{%22stiftid%22:{%22order%22:%22asc%22}}],%22size%22:20}&pretty&source_content_type=application/json
+```
+#### Man vil bemærke at man udover landets 10 stifter også får ”Døvemenigheder”, da de også figurerer som et administrativt stift i KIS.
+
+Man har lidt flere muligheder for filtrering og søgning med DSL query syntax, men det er nok også lidt mere komplekst at sætte korrekt op.
+Læs mere om brug af DSL query via almindelig GET forespørgsler:
+https://opensearch.org/docs/latest/api-reference/common-parameters/#request-body-in-query-string
+Og her om søgning generelt i OpenSearch:
+https://opensearch.org/docs/latest/api-reference/search/
+Hvis man har mulighed for at sende rå data med i sit GET request i det programmeringssprog du bruger så er det lidt nemmere at strikke sammen (det kan man med PHP cUrl og med Postman til tests). 
+Vi har efterfølgende brugt denne request body form, da den er mere læsevenlig. Men den request body kan man altså blot sætte ind som GET parameter (som beskrevet i linket ovenfor og her: https://stackoverflow.com/questions/48358344/convert-elasticsearch-kibana-query-string-format-to-uri-search-format).
+
+## Kogebog
+
+### Udtræk af begivenheder med eksempler
+
+#### Gudstjenester i et bestemt Sogn, 3 måneder frem. ####
+```http
+GET https://webservice.sogn.dk/event/_search
+```
 ```JSON
 {
   "query": {
     "bool": {
-      "must": [
-      ],
       "filter": [
         {
           "term": {
-            "deleted": false
+            "deleted": {
+              "value": false // Fravælg slettede begivenheder  
+            }
           }
         },
         {
           "term": {
-            "sogneid": 7000
+            "sogneid": {
+              "value": 7913 // Find i Erritsø sogn via myndighedskode
+            }
           }
         },
         {
           "term": {
-            "eventtype": 1
+            "eventtype": {
+              "value": 1 // Der er af typen gudstjenester
+            }
           }
         },
         {
           "range": {
             "startdate": {
-              "gte": "now",
-              "lte": "now+1M"
+              "gte": "now", // Findes i perioden fra dags dato
+              "lte": "now+3M" // Til 3 måneder frem
             }
           }
         }
@@ -168,21 +300,132 @@ Body til:
   },
   "sort": [
     {
-      "startdate": "ASC"
+      "startdate": {
+        "order": "asc" // Sortere stigende
+      }
     }
   ],
-  "size": 100
+  "size": 2 // Retunere de første 2 resultater
 }
 ```
 
-Nogle mener ikke at man kan eller bør sende en body i en GET request<a href="#2-stackoverflow-get-request-med-body"><sup>2</sup></a> (som skal være unik
-alene ud fra den URL der requestes – ikke mindst for at kunne cache svar). Andre vil have svært ved at få deres
-”framework” til at sende en request body med en GET request. Derfor har ElasticSearch også gjort det muligt at man kan
-sende disse requests som POST. MEN da man med POST requests også har adgang til at opdatere og slette indhold, så har vi
-som udgangspunkt ikke tilladt offentlig adgang til at kunne POST’e til denne service.  
-Kontakt os hvis I har problemer med at få det til at virke. Vi bruger ikke en proxy foran denne service så det burde
-virke at sende GET requests med en body – som i eksemplet ovenfor. Eksemplet vil i PHP med cUrl se nogenlunde således
-ud:
+**Svar**
+```json
+{
+    "took": 32,
+    "timed_out": false,
+    "_shards": {
+        "total": 5,
+        "successful": 5,
+        "skipped": 0,
+        "failed": 0
+    },
+    "hits": {
+        "total": {
+            "value": 7,
+            "relation": "eq"
+        },
+        "max_score": null,
+        "hits": [
+            {
+                "_index": "event-2024-02-28-1425",
+                "_id": "2717329",
+                "_score": null,
+                "_source": {
+                    "id": 2717329,
+                    "title": "Palmesøndag Familiegudstjeneste",
+                    "subtitle": "",
+                    "shortdescription": "",
+                    "description": "Kom med til gudstjeneste og få hele påskefortællingen fortalt med fortælling, leg og aktiviteter. Gudstjenesten er for hele familien, og samtidigt er det afslutning for minikonfirmanderne. Efter gudstjenesten spiser vi sammen i Sognehuset, og minikonfirmander får overrakt diplomer. Tag gerne hele familien med til festlig familiegudstjeneste og frokost den dag. Maden koster 25 kr., gratis for børn.",
+                    "person": "Tina Iversen",
+                    "locationname": "Erritsø Kirke",
+                    "category": "Familiegudstjeneste",
+                    "kirkeid": 7198,
+                    "locationid": 42394,
+                    "location": "55.547798,9.700200",
+                    "organiserid": 40177,
+                    "organisername": "Erritsø Sogn",
+                    "sogneid": 7913,
+                    "eventtype": 1,
+                    "address1": "Erritsø Bygade 1",
+                    "address2": "Erritsø",
+                    "zip": "7000",
+                    "city": "Fredericia",
+                    "churchday": "Palmesøndag",
+                    "created": 1700138021000,
+                    "changed": 1703682372000,
+                    "deleted": false,
+                    "noenddate": false,
+                    "origin": 11,
+                    "moreurl": "",
+                    "img": "",
+                    "online": false,
+                    "dawa": "",
+                    "kommunenavn": "Fredericia Kommune",
+                    "provstiid": 1004,
+                    "stiftid": 10,
+                    "startdate": "2024-03-24 10:00:00",
+                    "startdateTS": 1711270800000,
+                    "enddate": "2024-03-24 11:00:00",
+                    "enddateTS": 1711274400000
+                },
+                "sort": [
+                    1711274400000
+                ]
+            },
+            {
+                "_index": "event-2024-02-28-1425",
+                "_id": "2717341",
+                "_score": null,
+                "_source": {
+                    "id": 2717341,
+                    "title": "Skærtorsdag Gudstjeneste",
+                    "subtitle": "",
+                    "shortdescription": "",
+                    "description": "",
+                    "person": "Peter Nikolaj Frøkjær-Jensen",
+                    "locationname": "Erritsø Kirke",
+                    "category": "Gudstjeneste",
+                    "kirkeid": 7198,
+                    "locationid": 42394,
+                    "location": "55.547798,9.700200",
+                    "organiserid": 40177,
+                    "organisername": "Erritsø Sogn",
+                    "sogneid": 7913,
+                    "eventtype": 1,
+                    "address1": "Erritsø Bygade 1",
+                    "address2": "Erritsø",
+                    "zip": "7000",
+                    "city": "Fredericia",
+                    "churchday": "Skærtorsdag",
+                    "created": 1700138212000,
+                    "changed": 1700139404000,
+                    "deleted": false,
+                    "noenddate": false,
+                    "origin": 11,
+                    "moreurl": "",
+                    "img": "",
+                    "online": false,
+                    "dawa": "",
+                    "kommunenavn": "Fredericia Kommune",
+                    "provstiid": 1004,
+                    "stiftid": 10,
+                    "startdate": "2024-03-28 17:00:00",
+                    "startdateTS": 1711641600000,
+                    "enddate": "2024-03-28 18:00:00",
+                    "enddateTS": 1711645200000
+                },
+                "sort": [
+                    1711645200000
+                ]
+            }
+        ]
+    }
+}
+```
+
+
+Eksemplet vil i PHP med curl se nogenlunde således ud:
 
 ```PHP
 $params = array(
@@ -190,27 +433,27 @@ $params = array(
         "bool" => array(
             "filter" => array(
                 array(
-                    "term" => array(
-                        "sogneid" => 7000
-                    )
+    "term" => array(
+        "sogneid" => 7913
+    )
                 ),
                 array(
-                    "term" => array(
-                        "eventtype" => 1
-                    )
+    "term" => array(
+        "eventtype" => 1
+    )
                 ),
                 array(
-                    "term" => array(
-                        "deleted" => false
-                    )
+    "term" => array(
+        "deleted" => false
+    )
                 ),
                 array(
-                    "range" => array(
-                        "startdate" => array(
-                            "gte" => "now",
-                            "lte" => "now+1M"
-                        )
-                    )
+    "range" => array(
+        "startdate" => array(
+   "gte" => "now",
+   "lte" => "now+3M"
+        )
+    )
                 )
             )
         )
@@ -223,7 +466,7 @@ $params = array(
 $jsonParams = json_encode($params);
 
 $ch = curl_init();
-curl_setopt($ch, CURLOPT_URL, "https://es.sogn.dk/sognekalender/event/_search");
+curl_setopt($ch, CURLOPT_URL, "https://webservice.sogn.dk/event/_search");
 curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json','Content-Length: ' . strlen($jsonParams)));
@@ -233,63 +476,22 @@ $resultArray = array();
 if (curl_errno($ch) === 0) {
     $resultArray = json_decode($result,true);
 } else {
-    error_log('Searcherr: '.curl_error($ch).$result;
+    error_log('Searcher: '.curl_error($ch).$result);
 }
 curl_close($ch);
 return $resultArray;
 ```
+Brug af OpenSearch via javascript følger samme principper.  
+Bemærk at man nemt kan medtage en size og en from parameter til at opdele resultater i mindre mængder (se OpenSearch dokumentationen).
 
-Brug af ElasticSearch via javascript følger samme principper.
-Bemærk at man nemt kan medtage en size og en from parameter til at opdele resultater i mindre mængder (se ElasticSearch
-dokumentationen).
 
-### Sammenligning af felter fra gamle services
-
-I nedenstående tabel kan man se alle feltnavne for event typen fra ElasticSearch indekset sognekalender. Der er angivet
-hvad feltet hed i de to gamle services og en kort beskrivelse af feltets indhold. Mange id'er kommer fra
-Kirkeministeriets Informationssystem (KIS), hvilket så er angivet som KIS.
-
-Alle felter kan bruges til at indsnævre en søgning. Afhængigt af typen kan man bruge forskellige typer af søgning og
-filtre.
-typen event:
-
-| Feltnavn                                                                                                                                                                                                                            |                                                          arrangementer2012.php                                                          |                                                              gudstjenester2012.php                                                              | Forklaring                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------------------------------------------------:|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `kirkeid` (integer)                                                                                                                                                                                                                 |                                                                 kirkeId                                                                 |                                                                     kirkeId                                                                     | id som stammer fra KIS. <br>Vil kun være sat hvis en begivenhed foregår i en kirke.                                                                                                                                                                                                                                                                                                                                                                      |
-| `sogneid` (integer)                                                                                                                                                                                                                 |                                                                 sogneId                                                                 |                                                                     sogneId                                                                     | id som stammer fra KIS.<br>Burde altid være med for begivenheder for sogne.                                                                                                                                                                                                                                                                                                                                                                              |
-| `organiserid`                                                                                                                                                                                                                       |                                                               organiserId                                                               |                                                                   organiserId                                                                   | angiver det organiser id som en given arrangør har. Et sogn har feks et almindeligt sogneid,- men også et organiserid. Det er sognets organiserid som man kan bruge til at lave opslag direkte i den type der hedder organiser. Således vil et request til denne adresse: <br> <https://es.sogn.dk/sognekalender/organiser/39893> giver Gellerup Sogn, med de informationer der er gemt for sognet (stiftsid, provstiid, sogneid, kommunenavn, url, mm). |
-| `locationid` (integer)                                                                                                                                                                                                              |                                                               lokationId                                                                |                                                                   lokationId                                                                    | locationid: angiver det organiser id som man kan bruge til at finde yderligere information om hvor en begivenhed foregår. Man kalder altså samme adresse som organiser søgningen ovenfor men nu med locationid.                                                                                                                                                                                                                                          |
-| `provstiid` (integer)                                                                                                                                                                                                               |                                                                provstiId                                                                |                                                                    provstiId                                                                    | id som stammer fra KIS. <br> Burde altid være med for begivenheder for sogne.                                                                                                                                                                                                                                                                                                                                                                            |
-| `deleted` (bool)                                                                                                                                                                                                                    |                                                            deleted (integer)                                                            |                                                                deleted (integer)                                                                | Hvis denne er true (tidligere sat til 1) er den tilhørende begivenhed blevet slettet eller usynliggjort og bør derfor ikke vises i lister eller kalendre.                                                                                                                                                                                                                                                                                                |
-| `changed` (date, unix timestamp - antal millisekunder siden 1/1 1970). <br>Bemærk at denne date vises som antal millisekunder og ikke sekunder.<br>Man kan bruge alle "date" funktioner til at indsnævre en søgning via dette felt. |                                    changed (integer, unix timestamp - antal sekunder siden 1/1 1970)                                    |                                        changed (integer, unix timestamp - antal sekunder siden 1/1 1970)                                        | Dette date felt angiver hvornår en begivenhed sidst er ændret (eller oprettet). <br> Dette kan med fordel bruges til at tjekke om en begivenhed er opdateret/ændret siden man sidst hentede den.                                                                                                                                                                                                                                                         |
-| `startdate` (date) <br> Bemærk at datoen vises uden tidszone angivelse, men er i dansk format (inkl. sommertid)                                                                                                                     |                                starttid-tekst <br> Denne havde samme format (feks: 2017-05-18 09:00:00)                                 |                                                       dato <br> Denne havde samme format                                                        | Startdato for hvornår en begivenhed starter. <br> Kan med fordel bruges i et filter i en søgning hvor der ønskes vist begivenheder som starter i en bestemt periode.                                                                                                                                                                                                                                                                                     |
-| `startdateTS` (date) <br> Denne dato er ækvivalent med startdate, men vises som antal millisekunder siden 1/1 1970.                                                                                                                 |       starttid <br> Her var det sekunder siden 1/1 1970 (Unix Timestamp). Så vær opmærksom på at det nye felt er i millisekunder.       |           starttid <br> Her var det sekunder siden 1/1 1970 (Unix Timestamp). Så vær opmærksom på at det nye felt er i millisekunder.           | Alternativ representation af startdate, medtaget af hensyn til bagudkompatibilitet.                                                                                                                                                                                                                                                                                                                                                                      |
-| `enddate` (date) <br> Bemærk at datoen vises uden tidszone angivelse, men er i dansk format (inkl. sommertid)                                                                                                                       |                                 sluttid-tekst <br> Denne havde samme format (feks: 2017-05-18 10:00:00)                                 |                                     sluttid-tekst <br> Denne havde samme format (feks: 2017-05-18 10:00:00)                                     | Dato og tid for hvornår en begivenhed slutter. Hvis den ikke er angivet under oprettelsen kan den være samme tid som starttid.                                                                                                                                                                                                                                                                                                                           |
-| `enddateTS` (date) <br> Denne dato er ækvivalent med sluttid, men vises som antal millisekunder siden 1/1 1970.                                                                                                                     |       sluttid <br> Her var det sekunder siden 1/1 1970 (Unix Timestamp). Så vær opmærksom på at det nye felt er i millisekunder.        |           sluttid <br> Her var det sekunder siden 1/1 1970 (Unix Timestamp). Så vær opmærksom på at det nye felt er i millisekunder.            | Alternativ representation af enddate, medtaget af hensyn til bagudkompatibilitet.                                                                                                                                                                                                                                                                                                                                                                        |
-| `stiftid` (integer)                                                                                                                                                                                                                 |       Fandtes ikke i disse services, men man kunne forespørge med denne parameter. Nu kan man sætte et filter på feltet i stedet.       |           Fandtes ikke i disse services, men man kunne forespørge med denne parameter. Nu kan man sætte et filter på feltet i stedet.           | id som stammer fra KIS. <br> Burde altid være med for begivenheder for sogne, hvor det er tilhørende stifts id der vises.                                                                                                                                                                                                                                                                                                                                |
-| `location` (geo_point) <br> Her gemmes en lokations GPS koordinater (lat,lng). <br> Kan bruges til geo søgninger.                                                                                                                   |                        latitude og longitude var separate felter i begge feeds. De findes ikke separat længere.                         |                            latitude og longitude var separate felter i begge feeds. De findes ikke separat længere.                             | GPS efter WGS84 systemet. Eks: <br> `"location": "56.155773,10.133944"`, <br> Det er ikke alle lokationer der har koordinater, men kirker og en del andre har.                                                                                                                                                                                                                                                                                           |
-| `id` (integer)                                                                                                                                                                                                                      | Var angivet som attribut på det moede element der indeholdt alle felter for et arrangement: `<arrangementer>`<br>`<moede id="1264114">` | Var angivet som attribut på det praediken element der indeholdt alle felter for en gudstjeneste: `<gudstjenester>`<br>`<praediken id="989358">` | Begivenhedens unikke id (er altid sat)                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `title` (string)                                                                                                                                                                                                                    |                                                                  navn                                                                   |                                                                      navn                                                                       | Begivenhedens navn. Vil ofte være kategorien da denne sættes som default hvis titlen ikke er angivet under oprettelsen.                                                                                                                                                                                                                                                                                                                                  |
-| `subtitle`                                                                                                                                                                                                                          |                                                               Undertitel                                                                |                                                                   Undertitel                                                                    | Undertitel var meget sjældent brugt. Indtil videre vil subtitle nok også sjældent blive brugt.                                                                                                                                                                                                                                                                                                                                                           |
-| `shortdescription` (string)                                                                                                                                                                                                         |                                                                abstract                                                                 |                                                                    abstract                                                                     | En kort "teaser" tekst                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `description` (text)                                                                                                                                                                                                                |                     text og text_plain. Begge disse gamle felter var uden formattering, og det er det nye felt også                     |                         text og text_plain. Begge disse gamle felter var uden formattering, og det er det nye felt også                         | En længere beskrivelse                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `person` (string)                                                                                                                                                                                                                   |                                                              Fandtes ikke                                                               |                                                                     person                                                                      | Typisk er det den person (præst) der afholder begivenheden.                                                                                                                                                                                                                                                                                                                                                                                              |
-| `eventtype`                                                                                                                                                                                                                         |                                    Fandtes ikke men var så implicit 2 når man kaldte arrangementer.                                     |                                        Fandtes ikke men var så implicit 1 når man kaldte gudstjenester.                                         | 1 angiver gudstjenester, 2 arrangementer                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `origin`                                                                                                                                                                                                                            |                                                              Fandtes ikke                                                               |                                                                  Fandtes ikke                                                                   | Er mest et meta felt som vi bruger til at bestemme hvorfra en begivenhed er kommet ind til ES fra. Kan ignoreres.                                                                                                                                                                                                                                                                                                                                        |
-| `moreurl` (string)                                                                                                                                                                                                                  |                                                                  link                                                                   |                                                                      link                                                                       | URL til en længere beskrivelse (alternativt til streaming adressen).                                                                                                                                                                                                                                                                                                                                                                                     |
-| `noenddate` (bool)                                                                                                                                                                                                                  |                                                              ingen-sluttid                                                              |                                                                  ingen-sluttid                                                                  | Arrangøren har angivet at der ikke er en sluttid. Såfremt dette felt er sat kan man ikke regne med den værdi der fremgår af felterne for sluttid.                                                                                                                                                                                                                                                                                                        |
-| `online` (bool)                                                                                                                                                                                                                     |                                                        Fandtes ikke (nu online)                                                         |                                                            Fandtes ikke (nu online)                                                             | Angiver at begivenheden streames via internettet. Begivenheden kan stadig godt have en fysisk afvikling også. Mere information bør fremgå af feltet description. Ligesom en URL til streamen kan forventes at findes der eller i feltet moreurl.                                                                                                                                                                                                         |
-| `dawa` (string)                                                                                                                                                                                                                     |                                                        Fandtes ikke (nu dawaid)                                                         |                                                            Fandtes ikke (nu dawaid)                                                             | Eksperimentel! Man kan ikke regne med at denne værdi er sat. <br> Adgangsadressens unikke id, f.eks. 0a3f5095-45ec-32b8-e044-0003ba298018 som anvendt af DAWA <br> Se <http://origin-dawa-p1.aws.dk/dok/api/adgangsadresse> feltet id.                                                                                                                                                                                                                   |
-
-### Eksempel på forespørgsel og svar<a href="#3-alternativ-til-url-encoding"><sup>3</sup></a>
-
-*Bemærk: eksemplerne kan indeholde linjeskift, som ikke bør være i forespørgslen.*
+#### Begivenheder i bestemt sogn
+[Se alternativ til URL encoding](https://stackoverflow.com/questions/14339696/elasticsearch-post-with-json-search-body-vs-get-with-json-in-url)  
 
 ```curl
-curl -XGET "https://es.sogn.dk/sognekalender/event/_search" -d '{
+curl -XGET "https://webservice.sogn.dk/event/_search" -d '{
   "query": {
     "bool": {
-      "must": [],
       "filter": [
         { "term":  { "deleted": false }},
         { "term":  { "sogneid": 7000 }},
@@ -309,211 +511,178 @@ Resultatet af ovenstående forespørgsel kan se således ud:
 
 ```json
 {
-  "took": 3,
-  "timed_out": false,
-  "_shards": {
-    "total": 5,
-    "successful": 5,
-    "failed": 0
-  },
-  "hits": {
-    "total": 35,
-    "max_score": null,
-    "hits": [
-      {
-        "_index": "sognekalender-2017-06-27-15:17",
-        "_type": "event",
-        "_id": "2132613",
-        "_score": null,
-        "_source": {
-          "id": 2132613,
-          "title": "Test With link JS prod",
-          "subtitle": "",
-          "shortdescription": "",
-          "description": "test link is available",
-          "person": "Karen Elisabeth Huus",
-          "locationname": "Testkirke A",
-          "category": "Gudstjeneste",
-          "kirkeid": 9000,
-          "locationid": 42609,
-          "location": "0,0",
-          "organiserid": 38224,
-          "organisername": "testsogn",
-          "provstiid": "300",
-          "stiftid": "8",
-          "kommunenavn": "Københavns Kommune",
-          "sogneid": 7000,
-          "eventtype": 1,
-          "address1": "Addresse A",
-          "address2": "Addresse A",
-          "zip": "1010",
-          "city": "Lokation A",
-          "created": 1614939025000,
-          "changed": 1614939025000,
-          "deleted": false,
-          "noenddate": false,
-          "origin": 3,
-          "moreurl": "https://medarbeideren.dk/appointment?id=8cbfce55-7ac4-485d-8889#",
-          "img": "",
-          "startdate": "2021-03-15 11:00:00",
-          "startdateTS": 1615802400000,
-          "enddate": "2021-03-15 12:00:00",
-          "enddateTS": 1615806000000,
-          "online": true,
-          "dawa": ""
+    "took": 35,
+    "timed_out": false,
+    "_shards": {
+        "total": 5,
+        "successful": 5,
+        "skipped": 0,
+        "failed": 0
+    },
+    "hits": {
+        "total": {
+            "value": 10000,
+            "relation": "gte"
         },
-        "sort": [
-          1615806000000
+        "max_score": null,
+        "hits": [
+            {
+                "_index": "event-2024-02-28-1425",
+                "_id": "2500559",
+                "_score": null,
+                "_source": {
+    "id": 2500559,
+    "title": "Gudstjeneste",
+    "subtitle": "",
+    "shortdescription": "",
+    "description": "Gudstjeneste i Fole Kirke",
+    "person": "Inger Petersen",
+    "locationname": "Fole Kirke",
+    "category": "Gudstjeneste",
+    "kirkeid": 7111,
+    "locationid": 42313,
+    "location": "55.315300,8.981200",
+    "organiserid": 40099,
+    "organisername": "Fole Sogn",
+    "sogneid": 8952,
+    "eventtype": 1,
+    "address1": "Folevej 33",
+    "address2": "Fole",
+    "zip": "6510",
+    "city": "Gram",
+    "churchday": "Nytårsdag",
+    "created": 1668942902000,
+    "changed": 1668942920000,
+    "deleted": false,
+    "noenddate": false,
+    "origin": 11,
+    "moreurl": "",
+    "img": "",
+    "online": true,
+    "dawa": "",
+    "kommunenavn": "Haderslev Kommune",
+    "provstiid": 1001,
+    "stiftid": 10,
+    "startdate": "2023-01-01 00:00:00",
+    "startdateTS": 1672527600000,
+    "enddate": "2023-01-01 01:00:00",
+    "enddateTS": 1672531200000
+                },
+                "sort": [
+    1672531200000
+                ]
+            }
         ]
-      }
-    ]
-  }
+    }
 }
 ```
 
-Man kan se at der er 35 resultater af søgningen (men kun en returneret grundet size parameteren på 1). Man kan se at
-søgningen (selve søgningen internt i ElasticSearch) har taget 3 millisekunder. Dette er vel at mærke ikke tiden det
-tager fra man sender et request til man modtager svaret (der er en del andre tider involveret i den proces). Men det er
-stadig en væsentlig forbedring over vores sædvanlige PHP / MySQL baserede søgninger.
 
-## Sogne, kirker og lokationer (typen organiser)
+### Udtræk af Sogne, kirker og enheder (`organiser`)
 
-Exsempel på søgning efter et sogn ud fra et navn<a href="#4-se-elasticsearch-query-string-syntax"><sup>4</sup></a>
+Exsempel på søgning efter et sogn ud fra et navn.  
+[Læs her om Opensearch Query String Syntax](https://opensearch.org/docs/latest/query-dsl/full-text/query-string)
 
 ```curl
-curl -XGET "https://es.sogn.dk/sognekalender/organiser/_search" -d '{
+curl -XGET "https://webservice.sogn.dk/organiser/_search" -d '{
   "query": {
     "bool": {
       "must": [
-        { "match": { "navn": "Gellerup" }}  
+        { "match": { "navn": "Gellerup" }}
       ]
     }
   }
 }'
 ```
 
-Kan også laves som en direkte query string request:
-`curl -XGET "https://es.sogn.dk/sognekalender/organiser/_search?q=navn:Gellerup"` <a href="#5-url-encoding"><sup>5</sup></a>
+Kan også laves som en direkte query string request (med Lucene Query):
+https://webservice.sogn.dk/organiser/_search?q=navn:Gellerup&pretty
 
 Resultatet for begge ovenstående forespørgsler er:
 
 ```json
 {
-  "took": 2,
-  "timed_out": false,
-  "_shards": {
-    "total": 5,
-    "successful": 5,
-    "failed": 0
-  },
-  "hits": {
-    "total": 4,
-    "max_score": 7.9810753,
-    "hits": [
-      {
-        "_index": "sognekalender-2017-06-27-15:17",
-        "_type": "organiser",
-        "_id": "42507",
-        "_score": 7.9810753,
-        "_source": {
-          "id": 42507,
-          "type": 5,
-          "stiftid": 8,
-          "provstiid": 817,
-          "organiserid": 42507,
-          "sogneid": 9097,
-          "navn": "Gellerup Kirke",
-          "kommunenavn": "Aarhus Kommune",
-          "sogndkurl": "https://sogn.dk/gellerup",
-          "country": "DK",
-          "ownurl": "",
-          "deleted": false,
-          "changed": 1556632009000,
-          "origin": 1,
-          "address1": "Gudrunsvej 88",
-          "address2": "",
-          "zip": "8220",
-          "city": "Brabrand",
-          "img": "https://sogn.dk/uploads/DyconSogneadmin/Organiser/uid42507-ImageCropped-631c91.jpg",
-          "location": "56.155773,10.133944",
-          "kirkeid": "7314"
-        }
-      },
-      {
-        "_index": "sognekalender-2017-06-27-15:17",
-        "_type": "organiser",
-        "_id": "39893",
-        "_score": 7.902451,
-        "_source": {
-          "id": 39893,
-          "type": 1,
-          "stiftid": 8,
-          "provstiid": 817,
-          "organiserid": 39893,
-          "sogneid": 9097,
-          "navn": "Gellerup Sogn",
-          "kommunenavn": "Aarhus Kommune",
-          "sogndkurl": "https://sogn.dk/gellerup",
-          "country": "DK",
-          "ownurl": "www.gellerupkirke.dk",
-          "deleted": false,
-          "changed": 1556632009000,
-          "origin": 1
-        }
-      },
-      {
-        "_index": "sognekalender-2017-06-27-15:17",
-        "_type": "organiser",
-        "_id": "85173",
-        "_score": 7.8435044,
-        "_source": {
-          "id": 85173,
-          "navn": "Gellerup Kirke",
-          "sogneid": 9135,
-          "provstiid": "817",
-          "stiftid": "8",
-          "type": 4,
-          "origin": 3,
-          "organiserid": "39894",
-          "kommunenavn": "Aarhus Kommune"
-        }
-      },
-      {
-        "_index": "sognekalender-2017-06-27-15:17",
-        "_type": "organiser",
-        "_id": "86217",
-        "_score": 7.8435044,
-        "_source": {
-          "id": 86217,
-          "navn": "Gellerup Kirke",
-          "sogneid": 8130,
-          "provstiid": "817",
-          "stiftid": "8",
-          "type": 4,
-          "origin": 3,
-          "organiserid": "39890",
-          "kommunenavn": "Aarhus Kommune"
-        }
-      }
-    ]
-  }
+    "took": 1,
+    "timed_out": false,
+    "_shards": {
+        "total": 5,
+        "successful": 5,
+        "skipped": 0,
+        "failed": 0
+    },
+    "hits": {
+        "total": {
+            "value": 2,
+            "relation": "eq"
+        },
+        "max_score": 6.677451,
+        "hits": [
+            {
+                "_index": "organiser-2024-01-17-1325",
+                "_id": "39893",
+                "_score": 6.677451,
+                "_source": {
+                    "id": 39893,
+                    "type": 1,
+                    "stiftid": 8,
+                    "provstiid": 817,
+                    "organiserid": 39893,
+                    "sogneid": 9097,
+                    "navn": "Gellerup Sogn",
+                    "kommunenavn": "Aarhus Kommune",
+                    "sogndkurl": "https://sogn.dk/gellerup",
+                    "country": "DK",
+                    "ownurl": "www.gellerupkirke.dk",
+                    "deleted": false,
+                    "changed": 1556632009000,
+                    "created": 1387396021000,
+                    "aliases": "fisk",
+                    "navnesuggest": "Gellerup Sogn fisk",
+                    "origin": 1
+                }
+            },
+            {
+                "_index": "organiser-2024-01-17-1325",
+                "_id": "42507",
+                "_score": 6.600841,
+                "_source": {
+                    "id": 42507,
+                    "type": 5,
+                    "stiftid": 8,
+                    "provstiid": 817,
+                    "organiserid": 42507,
+                    "sogneid": 9097,
+                    "navn": "Gellerup Kirke",
+                    "kommunenavn": "Aarhus Kommune",
+                    "sogndkurl": "https://sogn.dk/gellerup",
+                    "country": "DK",
+                    "ownurl": "",
+                    "deleted": false,
+                    "changed": 1631837101000,
+                    "created": 1387400461000,
+                    "aliases": "",
+                    "navnesuggest": "Gellerup Kirke",
+                    "origin": 1,
+                    "address1": "Gudrunsvej 88",
+                    "address2": "",
+                    "zip": "8220",
+                    "city": "Brabrand",
+                    "img": "https://sogn.dk/uploads/DyconSogneadmin/Organiser/uid42507-ImageCropped-631c91.jpg",
+                    "location": "56.155773,10.133944",
+                    "kirkeid": 7314,
+                    "sogneorganiserid": 39893
+                }
+            }
+        ]
+    }
 }
 ```
 
-Man får altså 4 hits. Et hit for sognet (type: 1), et hit for kirken i Gellerup (type: 5) og to hits for Gellerup
-Kirke (type: 4).  
-Dette skyldes at der for typen organiser findes seks forskellige typer angivet fra integer feltet type (ikke at
-forveksle med de tidligere omtalte ElasticSearch typer):  
-1: Sogn (KIS),  
-2: Provsti (KIS),  
-3: Stift (KIS),  
-4: Oprettede lokationer fra API leverandørers Sted angivelse  
-5: Kirke (KIS),  
-6: Brugeroprettede lokationer fra sogn.dk/admin  
+Man får altså 2 hits. Et hit for sognet (type: 1), et hit for kirken i Gellerup (type: 5).  
 Hvis man således kun ønsker at søge efter sogne kan man tilføje type: 1 til søgningen:
 
 ```curl
-curl -XGET "https://es.sogn.dk/sognekalender/organiser/_search" -d '{
+curl -XGET "https://webservice.sogn.dk/organiser/_search" -d '{
   "query": {
     "bool": {
       "must": [
@@ -525,66 +694,20 @@ curl -XGET "https://es.sogn.dk/sognekalender/organiser/_search" -d '{
 }'
 ```
 
-Kan også laves som en direkte query string request<a href="#6-bemærk-query-strengen"><sup>6</sup></a>:
-
-```curl
-curl -XGET "https://es.sogn.dk/sognekalender/organiser/_search?source=%7B%0A%20%20%22query%22%3A%20%7B%20%0A%20%20%20%20%22bool%22%3A%20%7B%20%0A%20%20%20%20%20%20%22must%22%3A%20%5B%0A%20%20%20%20%20%20%20%20%7B%20%22match%22%3A%20%7B%20%22navn%22%3A%20%22Gellerup*%22%20%7D%7D%2C%20%20%0A%20%20%20%20%20%20%20%20%7B%20%22match%22%3A%20%7B%20%22type%22%3A%201%20%7D%7D%20%20%0A%20%20%20%20%20%20%5D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A" 
+Kan også laves som en direkte query string request med cUrl (eller direkte i browseren):  
+```curl 
+curl -XGET "https://webservice.sogn.dk/organiser/_search?source=%7B%0A%20%20%22query%22%3A%20%7B%20%0A%20%20%20%20%22bool%22%3A%20%7B%20%0A%20%20%20%20%20%20%22must%22%3A%20%5B%0A%20%20%20%20%20%20%20%20%7B%20%22match%22%3A%20%7B%20%22navn%22%3A%20%22Gellerup*%22%20%7D%7D%2C%20%20%0A%20%20%20%20%20%20%20%20%7B%20%22match%22%3A%20%7B%20%22type%22%3A%201%20%7D%7D%20%20%0A%20%20%20%20%20%20%5D%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A&pretty&source_content_type=application/json" 
 ```
+*Bemærk at guery strengen er url encodet direkte ud fra request body (men med source som parameter nu)*
+
+Eller med Lucene syntax:
+```http 
+GET https://webservice.sogn.dk/organiser/_search?q=navn:Gellerup%20AND%20type:1&pretty
+```
+*Bemærk at query strengen i parameteren `q` skal url encodes (hvis ikke din browser gør det for dig). Her bliver mellemrum konverteret til %20*
 
 Resultatet er nu at man kun får Gellerup Sogn i svaret.
 Hvis man kun vil finde kirker, kan man så i stedet sætte type til 5.  
-I nedenstående tabel kan man se hvilke properties / felter der er for typen organiser samt hvad de tilsvarende hedder i
-de "gamle" service feed (sogne.php og kirker.php), samt en kort beskrivelse af indholdet.  
-Vi kan se at properties fra mappings for organiser typen via:
-`https://es.sogn.dk/sognekalender/organiser/_mapping`
-
-```
-"address1": {"type": "text"},
-"address2": {"type": "text"},
-"changed": {"type": "date"},
-"city": {"type": "text"},
-"country": {"type": "keyword","null_value": "DK"}
-"created": {"type": "date"},
-"id": {"type": "integer"},
-"img": {"type": "text","index": false},
-"kirkeid": {"type": "integer"},
-"kommunenavn": {"type": "text"},
-"location": {"type": "geo_point","ignore_malformed": true},
-"navn": {"type": "text","fields": {
-    "raw": {"type": "keyword"}
-  },
-},
-"organiserid": {"type": "integer"},
-"origin": {"type": "integer"},
-"ownurl": {"type": "text"},
-"provstiid": {"type": "integer"},
-"deleted": {"type": "boolean"},
-"sogndkurl": {"type": "text"},
-"sogneid": {"type": "integer"},
-"stiftid": {"type": "integer"},
-"type": {"type": "integer"},
-"zip": {"type": "text"}
-```
-
-### Organiser felter
-
-| Feltnavn                                                                                                                                                                                                                          |                                        sogne.php                                         |                                        kirker.php                                        | Forklaring                                                                                                                                                                                                                                                                                                       |
-|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------:|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `kirkeid` (integer)                                                                                                                                                                                                               |                                         kirkeId                                          |                                         kirkeId                                          | id som stammer fra KIS. <br> Vil kun være sat for kirker.                                                                                                                                                                                                                                                        |
-| `navn` (text)                                                                                                                                                                                                                     |                                        kirkenavn                                         |                                        kirkenavn                                         | Navnet på organiser/lokation (som jo kan være af forskellig type). Se type.                                                                                                                                                                                                                                      |
-| `type` (integer)                                                                                                                                                                                                                  |             Fandtes ikke (var implicit 1 for sogne.php og 5 for kirker.php)              |             Fandtes ikke (var implicit 1 for sogne.php og 5 for kirker.php)              | Typen af organiser: <br> 1: Sogn (KIS), <br> 2: Provsti (KIS), <br> 3: Stift (KIS), <br> 4: Oprettede lokationer fra API leverandørers Sted angivelse <br> 5: Kirke (KIS), <br> 6: Brugeroprettet lokation fra sogn.dk/admin                                                                                     |
-| `sogneid` (integer)                                                                                                                                                                                                               |                                         sogneId                                          |                                         sogneId                                          | id som stammer fra KIS. <br> Er også sat for lokationer oprettet af sognebrugere, hvor det så er sognets id der står angivet.                                                                                                                                                                                    |
-| `provstiid` (integer)                                                                                                                                                                                                             |                                        provstiid                                         |                                        provstiId                                         | id som stammer fra KIS.                                                                                                                                                                                                                                                                                          |
-| `stiftid` (integer)                                                                                                                                                                                                               |                                         stiftid                                          |                                         stiftId                                          | id som stammer fra KIS.                                                                                                                                                                                                                                                                                          |
-| `Id`                                                                                                                                                                                                                              |                                       Fandtes ikke                                       |                                        locationid                                        | Organiser id. Er så et unikt id på tværs af de forskellige organiser typer.                                                                                                                                                                                                                                      |
-| `changed` (date, unix timestamp - antal millisekunder siden 1/1 1970). Bemærk at denne date vises som antal millisekunder og ikke sekunder. <br> Man kan bruge alle "date" funktioner til at indsnævre en søgning via dette felt. |                                       Fandtes ikke                                       |                                       Fandtes ikke                                       | Dette date felt angiver hvornår en organiser sidst er ændret (eller oprettet).                                                                                                                                                                                                                                   |
-| `location` (geo_point) <br> Her gemmes en lokations GPS koordinater (lat,lng). <br> Kan bruges til geo søgninger.                                                                                                                 | latitude og longitude var separate felter i begge feeds. De findes ikke separat længere. | latitude og longitude var separate felter i begge feeds. De findes ikke separat længere. | GPS efter WGS84 systemet. Eks: <br> "location": "56.155773,10.133944", <br> Det er ikke alle lokationer der har koordinater, men kirker og en del andre har. Lokationer af typen 4 (oprettet via API) har næsten aldrig koordinater. Ej heller sogne, provstier og stifte (typerne 1,2 og 3).                    |
-| `origin`                                                                                                                                                                                                                          |                                       Fandtes ikke                                       |                                       Fandtes ikke                                       | Er mest et meta felt som vi bruger til at bestemme hvorfra en organiser er kommet ind til ES fra. Kan ignoreres.                                                                                                                                                                                                 |
-| `sogndkurl`                                                                                                                                                                                                                       |                                        sogndkurl                                         |                                        sogndkurl                                         | Er primært relevant for sogne (organisere af typen 1). Angiver den URL som et sogn har på sogn.dk (feks: sogn.dk/gellerup)                                                                                                                                                                                       |
-| `ownurl`                                                                                                                                                                                                                          |                                          ownurl                                          |                                          ownurl                                          | Angiver en eventuel egen URL (hjemmeside). Dette er også primært relevant/sat for sogne.                                                                                                                                                                                                                         |
-| `dawa` (string)                                                                                                                                                                                                                   |                                   Fandtes/findes ikke                                    |                                   Fandtes/findes ikke                                    | Eksperimentel! Man kan ikke regne med at denne værdi er sat. <br> Adgangsadressens unikke id, f.eks. 0a3f5095-45ec-32b8-e044-0003ba298018 som anvendt af DAWA <br> Se <https://dawadocs.dataforsyningen.dk/dok/api/adgangsadresse> feltet id. <br> Vil nok kun være sat / relevant for lokationer (typen 4,5,6). |
-
-### Sogne, Provstier og Stifte GET eksempler
 
 #### Json body til søgning efter Sogn på `sogneid`
 
@@ -662,106 +785,73 @@ Resultat på Stift GET
 
 ```json
 {
-  "took": 2,
-  "timed_out": false,
-  "_shards": {
-    "total": 5,
-    "successful": 5,
-    "failed": 0
-  },
-  "hits": {
-    "total": 1,
-    "max_score": 0.0,
-    "hits": [
-      {
-        "_index": "sognekalender-2022-06-24-01:55",
-        "_type": "organiser",
-        "_id": "54165",
-        "_score": 0.0,
-        "_source": {
-          "id": 54165,
-          "type": 3,
-          "stiftid": 1,
-          "provstiid": 0,
-          "organiserid": 54165,
-          "sogneid": 0,
-          "navn": "Københavns Stift",
-          "kommunenavn": "",
-          "sogndkurl": "",
-          "country": "DK",
-          "ownurl": "www.kobenhavnsstift.dk",
-          "deleted": false,
-          "changed": 1556632009000,
-          "origin": 1
-        }
-      }
-    ]
-  }
+    "took": 1,
+    "timed_out": false,
+    "_shards": {
+        "total": 5,
+        "successful": 5,
+        "skipped": 0,
+        "failed": 0
+    },
+    "hits": {
+        "total": {
+            "value": 1,
+            "relation": "eq"
+        },
+        "max_score": 0.0,
+        "hits": [
+            {
+                "_index": "organiser-2024-01-17-1325",
+                "_id": "54165",
+                "_score": 0.0,
+                "_source": {
+                    "id": 54165,
+                    "type": 3,
+                    "stiftid": 1,
+                    "provstiid": 0,
+                    "organiserid": 54165,
+                    "sogneid": 0,
+                    "navn": "Københavns Stift",
+                    "kommunenavn": "",
+                    "sogndkurl": "",
+                    "country": "DK",
+                    "ownurl": "www.kobenhavnsstift.dk",
+                    "deleted": false,
+                    "changed": 1556632009000,
+                    "created": 1401787646000,
+                    "aliases": "",
+                    "navnesuggest": "Københavns Stift",
+                    "origin": 1
+                }
+            }
+        ]
+    }
 }
 ```
 
-Liste over stifter findes her da de ændres sjældent. 
-
-| Id  |      Stitfs navn       |          Url           |
-|:----|:----------------------:|:----------------------:|
-| 1   |    Københavns Stift    | www.kobenhavnsstift.dk |
-| 2   |    Helsingør Stift     | www.helsingoerstift.dk |
-| 3   |     Roskilde Stift     |  www.roskildestift.dk  |
-| 4   | Lolland-Falsters Stift |     www.lfstift.dk     |
-| 5   |      Fyens Stift       |   www.fyensstift.dk    |
-| 6   |     Aalborg Stift      |  www.aalborgstift.dk   |
-| 7   |      Viborg Stift      |   www.viborgstift.dk   |
-| 8   |      Århus Stift       |   www.aarhusstift.dk   |
-| 9   |       Ribe Stift       |    www.ribestift.dk    |
-| 10  |    Haderslev Stift     | www.haderslevstift.dk  |
 
 Ønsker man at begrænse resultatet til alle provstier eller stifte kan man således sætte et filter på typen (med 2 for
 provstier og 3 for stifte).
 
-Med denne forespørgsel fås således landets stifter:
-
-```curl
-curl -XGET "https://es.sogn.dk/sognekalender/organiser/_search" -d '{"query":{
- "bool":{
-   "must":[],
-   "filter":[
-      {"term":{"deleted": false}},
-      {"type":{"value":"organiser"}},
-      {"term":{"type":3}}
-   ]
- }
-}}'
-```
-
-Man vil bemærke at man udover landets 10 stifter også får ”Døvemenigheder”, da de også figurerer som et administrativt
-stift i KIS.
-
 ### Kirke GET eksempler
 
 ```http request
-GET https://es.sogn.dk/sognekalender/organiser/_search
+GET https://webservice.sogn.dk/organiser/_search
 ```
 Json Body
 ```json
 {
   "query": {
     "bool": {
-      "must": [],
       "filter": [
         {
-          "term": {
-            "type": 5
-          }
+          "term": { "type": 5 }
         },
         {
-          "term": {
-            "deleted": false
-          }
+          "term": { "deleted": false }
         },
         {
-          "term": {
-            "zip": "8000"
-          }
+          "term": { "zip": "8000" }
         }
       ]
     }
@@ -777,132 +867,143 @@ Json Body
 Svar
 ```json
 {
-  "took": 1,
-  "timed_out": false,
-  "_shards": {
-    "total": 5,
-    "successful": 5,
-    "failed": 0
-  },
-  "hits": {
-    "total": 9,
-    "max_score": null,
-    "hits": [
-      {
-        "_index": "sognekalender-2022-06-24-01:55",
-        "_type": "organiser",
-        "_id": "41847",
-        "_score": null,
-        "_source": {
-          "id": 41847,
-          "type": 5,
-          "stiftid": 8,
-          "provstiid": 801,
-          "organiserid": 41847,
-          "sogneid": 8132,
-          "navn": "Sankt Lukas Kirke",
-          "kommunenavn": "Aarhus Kommune",
-          "sogndkurl": "https://sogn.dk/sanktlukas-aarhus",
-          "country": "DK",
-          "ownurl": "",
-          "deleted": false,
-          "changed": 1631837101000,
-          "origin": 1,
-          "address1": "Skt.Lukas Kirkeplads 1",
-          "address2": "",
-          "zip": "8000",
-          "city": "Aarhus C",
-          "img": "https://sogn.dk/uploads/DyconSogneadmin/Organiser/8132_6603_1383140270.jpg",
-          "location": "56.144753,10.193872",
-          "kirkeid": 6603
+    "took": 1,
+    "timed_out": false,
+    "_shards": {
+        "total": 5,
+        "successful": 5,
+        "skipped": 0,
+        "failed": 0
+    },
+    "hits": {
+        "total": {
+            "value": 9,
+            "relation": "eq"
         },
-        "sort": [
-          8132
+        "max_score": null,
+        "hits": [
+            {
+                "_index": "organiser-2024-01-17-1325",
+                "_id": "41847",
+                "_score": null,
+                "_source": {
+                    "id": 41847,
+                    "type": 5,
+                    "stiftid": 8,
+                    "provstiid": 801,
+                    "organiserid": 41847,
+                    "sogneid": 8132,
+                    "navn": "Sankt Lukas Kirke",
+                    "kommunenavn": "Aarhus Kommune",
+                    "sogndkurl": "https://sogn.dk/sanktlukas-aarhus",
+                    "country": "DK",
+                    "ownurl": "",
+                    "deleted": false,
+                    "changed": 1631837101000,
+                    "created": 1387400461000,
+                    "aliases": "",
+                    "navnesuggest": "Sankt Lukas Kirke",
+                    "origin": 1,
+                    "address1": "Skt.Lukas Kirkeplads 1",
+                    "address2": "",
+                    "zip": "8000",
+                    "city": "Aarhus C",
+                    "img": "https://sogn.dk/uploads/DyconSogneadmin/Organiser/8132_6603_1383140270.jpg",
+                    "location": "56.144753,10.193872",
+                    "kirkeid": 6603,
+                    "sogneorganiserid": 39575
+                },
+                "sort": [
+                    8132
+                ]
+            },
+            {
+                "_index": "organiser-2024-01-17-1325",
+                "_id": "41843",
+                "_score": null,
+                "_source": {
+                    "id": 41843,
+                    "type": 5,
+                    "stiftid": 8,
+                    "provstiid": 801,
+                    "organiserid": 41843,
+                    "sogneid": 8120,
+                    "navn": "Sankt Johannes Kirke",
+                    "kommunenavn": "Aarhus Kommune",
+                    "sogndkurl": "https://sogn.dk/sanktjohannes-aarhus",
+                    "country": "DK",
+                    "ownurl": "",
+                    "deleted": false,
+                    "changed": 1631837101000,
+                    "created": 1387400461000,
+                    "aliases": "",
+                    "navnesuggest": "Sankt Johannes Kirke",
+                    "origin": 1,
+                    "address1": "Peter Sabroes Gade 20",
+                    "address2": "",
+                    "zip": "8000",
+                    "city": "Aarhus C",
+                    "img": "https://sogn.dk/uploads/DyconSogneadmin/Organiser/8120_6599_1393320149.jpg",
+                    "location": "56.169144,10.210092",
+                    "kirkeid": 6599,
+                    "sogneorganiserid": 39573
+                },
+                "sort": [
+                    8120
+                ]
+            }
         ]
-      },
-      {
-        "_index": "sognekalender-2022-06-24-01:55",
-        "_type": "organiser",
-        "_id": "41843",
-        "_score": null,
-        "_source": {
-          "id": 41843,
-          "type": 5,
-          "stiftid": 8,
-          "provstiid": 801,
-          "organiserid": 41843,
-          "sogneid": 8120,
-          "navn": "Sankt Johannes Kirke",
-          "kommunenavn": "Aarhus Kommune",
-          "sogndkurl": "https://sogn.dk/sanktjohannes-aarhus",
-          "country": "DK",
-          "ownurl": "",
-          "deleted": false,
-          "changed": 1631837101000,
-          "origin": 1,
-          "address1": "Peter Sabroes Gade 20",
-          "address2": "",
-          "zip": "8000",
-          "city": "Aarhus C",
-          "img": "https://sogn.dk/uploads/DyconSogneadmin/Organiser/8120_6599_1393320149.jpg",
-          "location": "56.169144,10.210092",
-          "kirkeid": 6599
-        },
-        "sort": [
-          8120
-        ]
-      }
-    ]
-  }
+    }
 }
 ```
 
-## Menighedsråd (typen mr)
+### Udtræk af Menighedsråd (`mr`)
 
-Mr typen viser udvalgt data om alle landets menighedsråd (små 2000). Ved at kalde _mapping:
-`https://es.sogn.dk/sognekalender/mr/_mapping`
-
-\- ses de felter der er tilgængelige.
+`mr` typen viser udvalgt data om alle landets menighedsråd (små 2000). Du kan se hvilke felter der findes ved at kalde _mapping:
+`https://webservice.sogn.dk/mr/_mapping`
 
 En søgning uden filtre eller parametre vil give et resultat på alle landets menighedsråd (dog begrænset til de første 10
-da det er standard når size parameteret udelades).  
-`https://es.sogn.dk/sognekalender/mr/_search`  
-resultat (her vises blot det første):
+da det er default når size parameteret udelades).  
+`https://webservice.sogn.dk/mr/_search`  
+
+Resultat herunder vises blot det første
 
 ```json
 {
-  "took": 1,
+  "took": 0,
   "timed_out": false,
   "_shards": {
     "total": 5,
     "successful": 5,
+    "skipped": 0,
     "failed": 0
   },
   "hits": {
-    "total": 1703,
-    "max_score": 1,
+    "total": {
+      "value": 1644,
+      "relation": "eq"
+    },
+    "max_score": 1.0,
     "hits": [
       {
-        "_index": "sognekalender-2017-06-27-15:17",
-        "_type": "mr",
-        "_id": "8357",
-        "_score": 1,
+        "_index": "mr-2024-01-17-1325",
+        "_id": "7039",
+        "_score": 1.0,
         "_source": {
-          "id": 8357,
+          "navn": "Sankt Pauls Sogns Menighedsråd",
+          "kommunenavn": "Københavns Kommune",
+          "changed": 1682041235000,
+          "mrkode": 7039,
+          "id": 7039,
+          "organiserids": "38162",
+          "navnesuggest": "Sankt Pauls Sogns Menighedsråd Københavns Kommune",
           "type": 11,
-          "stiftid": 6,
-          "mrkode": 8357,
-          "provstiid": 603,
-          "organiserids": "39015",
-          "sogneids": "8357",
-          "sognenames": "Store Ajstrup Sogn",
-          "sogndkurls": "https://sogn.dk/storeajstrup/menighedsraad/",
-          "navn": "Store Ajstrup Sogns Menighedsråd",
-          "email": "8357@SOGN.DK",
-          "kommunenavn": "Aalborg Kommune",
+          "email": "7039@SOGN.DK",
+          "sognenames": "Sankt Pauls Sogn",
+          "sogneids": "7039",
+          "sogndkurls": "https://sogn.dk/sanktpaul-koebenhavn/menighedsraad/",
           "country": "DK",
           "deleted": false,
-          "changed": 1497882625000,
           "origin": 1
         }
       }
@@ -913,156 +1014,91 @@ resultat (her vises blot det første):
 
 Igen er det vigtigt altid at huske at medtage et `deleted:false` filter, da man ellers får slettede menighedsråd med.
 
-## Præster (typen priest)
+### Udtræk af Præster (`priest`)
 
 Man kan søge efter landets ansatte præster ved at søge i typen priest. De forskellige felter kan ses ved at kalde
 mapping:
 
-`https://es.sogn.dk/sognekalender/priest/_mapping`
+`https://webservice.sogn.dk/priest/_mapping`
 
-Resultat:
-
-```json
-{
-  "sognekalender-2017-06-27-15:17": {
-    "mappings": {
-      "priest": {
-        "properties": {
-          "changed": {
-            "type": "date"
-          },
-          "created": {
-            "type": "date"
-          },
-          "deleted": {
-            "type": "boolean"
-          },
-          "id": {
-            "type": "integer"
-          },
-          "mrkodetilknytninger": {
-            "type": "text",
-            "analyzer": "default",
-            "search_analyzer": "default_search"
-          },
-          "navn": {
-            "type": "text",
-            "fields": {
-              "raw": {
-                "type": "keyword"
-              }
-            },
-            "analyzer": "default",
-            "search_analyzer": "default_search"
-          },
-          "organisertilknytninger": {
-            "type": "text",
-            "analyzer": "default",
-            "search_analyzer": "default_search"
-          },
-          "origin": {
-            "type": "integer"
-          },
-          "provstier": {
-            "type": "text",
-            "analyzer": "default",
-            "search_analyzer": "default_search"
-          },
-          "sogne": {
-            "type": "text",
-            "analyzer": "default",
-            "search_analyzer": "default_search"
-          },
-          "stifte": {
-            "type": "text",
-            "analyzer": "default",
-            "search_analyzer": "default_search"
-          },
-          "stillingskoder": {
-            "type": "text",
-            "analyzer": "default",
-            "search_analyzer": "default_search"
-          }
-        }
-      }
-    }
-  }
-}
-```
 
 Et svar til `_search` (uden parametre kan give et resultat som nedenfor):
 
 ```json
 {
-  "took": 1,
+  "took": 0,
   "timed_out": false,
   "_shards": {
     "total": 5,
     "successful": 5,
+    "skipped": 0,
     "failed": 0
   },
   "hits": {
-    "total": 2197,
-    "max_score": 1,
+    "total": {
+      "value": 2222,
+      "relation": "eq"
+    },
+    "max_score": 1.0,
     "hits": [
       {
-        "_index": "sognekalender-2017-06-27-15:17",
-        "_type": "priest",
-        "_id": "314",
-        "_score": 1,
+        "_index": "priest-2024-01-17-1325",
+        "_id": "35",
+        "_score": 1.0,
         "_source": {
-          "id": 314,
-          "navn": "Henriette Leslie Idestrup",
-          "sogne": "7780",
-          "provstier": "501",
+          "id": 35,
+          "navn": "Henriette Petersen",
+          "navnesuggest": "Henriette Petersen",
+          "sogne": "7697 7698",
+          "provstier": "508",
           "stifte": "5",
-          "mrkodetilknytninger": "7780",
-          "stillingskoder": "9254",
-          "organisertilknytninger": "38754",
-          "deleted": false,
-          "origin": 1,
-          "created": 1498569446000,
-          "changed": 1498569446000
-        }
-      },
-      {
-        "_index": "sognekalender-2017-06-27-15:17",
-        "_type": "priest",
-        "_id": "356",
-        "_score": 1,
-        "_source": {
-          "id": 356,
-          "navn": "Lisbeth Munk Madsen",
-          "sogne": "7143",
-          "provstier": "210",
-          "stifte": "2",
-          "mrkodetilknytninger": "7143",
+          "mrkodetilknytninger": "7697 7698",
           "stillingskoder": "9255",
-          "organisertilknytninger": "38271",
+          "organisertilknytninger": "38882 38883",
           "deleted": false,
           "origin": 1,
-          "created": 1498569446000,
-          "changed": 1498569446000
+          "created": 1705494301000,
+          "changed": 1705494301000
         }
       },
       {
-        "_index": "sognekalender-2017-06-27-15:17",
-        "_type": "priest",
-        "_id": "387",
-        "_score": 1,
+        "_index": "priest-2024-01-17-1325",
+        "_id": "17",
+        "_score": 1.0,
         "_source": {
-          "id": 387,
-          "navn": "Christina Radsted H Feddersen",
-          "sogne": "7200 7201",
-          "provstier": "313",
+          "id": 17,
+          "navn": "Curt Petersen",
+          "navnesuggest": "Curt Petersen",
+          "sogne": "7220 7236 7237",
+          "provstier": "304",
           "stifte": "3",
-          "mrkodetilknytninger": "7200 7201",
+          "mrkodetilknytninger": "7107",
           "stillingskoder": "9255",
-          "organisertilknytninger": "38636 38637",
+          "organisertilknytninger": "38078",
           "deleted": false,
           "origin": 1,
-          "created": 1498569446000,
-          "changed": 1498569446000
+          "created": 1705494301000,
+          "changed": 1705494301000
+        }
+      },
+      {
+        "_index": "priest-2024-01-17-1325",
+        "_id": "357",
+        "_score": 1.0,
+        "_source": {
+          "id": 357,
+          "navn": "Peter Peddersen",
+          "navnesuggest": "Peter Peddersen",
+          "sogne": "7107",
+          "provstier": "106",
+          "stifte": "1",
+          "mrkodetilknytninger": "7220 7236 7237",
+          "stillingskoder": "9255",
+          "organisertilknytninger": "38372 38383 38384",
+          "deleted": false,
+          "origin": 1,
+          "created": 1705494301000,
+          "changed": 1705494301000
         }
       }
     ]
@@ -1070,9 +1106,9 @@ Et svar til `_search` (uden parametre kan give et resultat som nedenfor):
 }
 ```
 
-Bemærk specielt den sidste præst med "id": 387, som har to ”sogne”, to ”mrkodetilknytninger” og to
-”organisertilknytninger”. Det vil sige, at denne præst har flere tilknytninger (præst for to sogne). En præst kan have
-mange tilknytninger, så denne liste kunne bestå af væsentligt flere sogne, mm.  
+Bemærk specielt den sidste præst med "id": 357, som har tre ”sogne”, to ”mrkodetilknytninger” og tre
+”organisertilknytninger”. Det vil sige, at denne præst har flere tilknytninger (præst for tre sogne).  
+En præst kan have mange tilknytninger, så denne liste kunne bestå af væsentligt flere sogne, mm.  
 Bemærk at værdierne er adskilt af mellemrum.  
 For de leverandører der indleverer kalender data på vegne af et sogn til sogn.dk,- er det specielt interessant at forstå
 hvordan præstens unikke id for en sognerelation opbygges.  
@@ -1081,9 +1117,9 @@ begivenheder <https://sogn.dk/api/dtd/api.dtd>) af:
 
 `<id>` + `<sognenr>` + `<stillingskode>` (hvor + blot er en konkatenering)
 
-Så I tilfælde af flere sognetilknytninger, skal man bruge det relevante sogns nummer. For præsten med id 387 vil denne
-have to præste id’er som kunne bruges til at angive denne præst som præst for en begivenhed for hhv sogn med nr 7200 
-og 7201. Nemlig 38772009255 og 38772019255.  
+Så I tilfælde af flere sognetilknytninger, skal man bruge det relevante sogns nummer. For præsten med id 357 vil denne
+have tre præste id’er som kunne bruges til at angive denne præst som præst for en begivenhed for hhv. sogn med nr 7220 
+og 7236. Nemlig 35772209255 og 35772369255.  
 Såfremt der er flere stillingskoder vil de relevante koder for præster være en af de følgende: 
 (rangeret med hyppigst forekommende øverst)
 
@@ -1093,18 +1129,10 @@ Såfremt der er flere stillingskoder vil de relevante koder for præster være e
 9264 Provst (kirkebogsfører)  
 9655 Hospitalpræst
 
-### Eksempel på forespørgsel efter præster for et givent sogn
+#### Eksempel på forespørgsel efter præster for et givent sogn
 
-Man kan enten lave en søgning på hele indekset (ved udeladelse af /priest/):
+`https://webservice.sogn.dk/priest/_search`
 
-`https://es.sogn.dk/sognekalender/_search`
-
-Eller en direkte søgning hvor det kun er typen priest der søges i:
-
-`https://es.sogn.dk/sognekalender/priest/_search`
-
-Hvis man søger på hele indekset vil det typisk være nødvendigt at medtage et type filter for at filtrere resultater fra
-andre typer fra:
 
 ```json
 {
@@ -1121,95 +1149,93 @@ andre typer fra:
           "term": {
             "sogne": "7201"
           }
-        },
-        {
-          "type": {
-            "value": "priest"
-          }
         }
       ]
     }
   }
-}
 ```
 
 Resultatet af ovenstående forespørgsel vil være en liste med præster for sognet med nr. 7201:
 
 ```json
 {
-  "took": 1,
-  "timed_out": false,
-  "_shards": {
-    "total": 5,
-    "successful": 5,
-    "failed": 0
-  },
-  "hits": {
-    "total": 3,
-    "max_score": 0,
-    "hits": [
-      {
-        "_index": "sognekalender-2017-06-27-15:17",
-        "_type": "priest",
-        "_id": "387",
-        "_score": 0,
-        "_source": {
-          "id": 387,
-          "navn": "Christina Radsted H Feddersen",
-          "sogne": "7200 7201",
-          "provstier": "313",
-          "stifte": "3",
-          "mrkodetilknytninger": "7200 7201",
-          "stillingskoder": "9255",
-          "organisertilknytninger": "38636 38637",
-          "deleted": false,
-          "origin": 1,
-          "created": 1498569446000,
-          "changed": 1498569446000
-        }
-      },
-      {
-        "_index": "sognekalender-2017-06-27-15:17",
-        "_type": "priest",
-        "_id": "423",
-        "_score": 0,
-        "_source": {
-          "id": 423,
-          "navn": "Kirsten Senbergs",
-          "sogne": "7200 7201",
-          "provstier": "313",
-          "stifte": "3",
-          "mrkodetilknytninger": "7200 7201",
-          "stillingskoder": "9023",
-          "organisertilknytninger": "38636 38637",
-          "deleted": false,
-          "origin": 1,
-          "created": 1498569446000,
-          "changed": 1498569446000
-        }
-      },
-      {
-        "_index": "sognekalender-2017-06-27-15:17",
-        "_type": "priest",
-        "_id": "235382",
-        "_score": 0,
-        "_source": {
-          "id": 235382,
-          "navn": "Marlene Evensen",
-          "sogne": "7200 7201 7411 7410",
-          "provstier": "313 208",
-          "stifte": "3 2",
-          "mrkodetilknytninger": "7200 7201 7411 7410",
-          "stillingskoder": "9023",
-          "organisertilknytninger": "38636 38637 38223 38222",
-          "deleted": false,
-          "origin": 1,
-          "created": 1498569446000,
-          "changed": 1546308001000
-        }
-      }
-    ]
-  }
+    "took": 726,
+    "timed_out": false,
+    "_shards": {
+        "total": 5,
+        "successful": 5,
+        "skipped": 0,
+        "failed": 0
+    },
+    "hits": {
+        "total": {
+            "value": 3,
+            "relation": "eq"
+        },
+        "max_score": 0.0,
+        "hits": [
+            {
+                "_index": "priest-2023-12-20-1636",
+                "_id": "387",
+                "_score": 0.0,
+                "_source": {
+                    "id": 387,
+                    "navn": "Jim Petersen",
+                    "navnesuggest": "Christina Petersen",
+                    "sogne": "7200 7201",
+                    "provstier": "313",
+                    "stifte": "3",
+                    "mrkodetilknytninger": "7200 7201",
+                    "stillingskoder": "9255",
+                    "organisertilknytninger": "38636 38637",
+                    "deleted": false,
+                    "origin": 1,
+                    "created": 1703090194000,
+                    "changed": 1703090194000
+                }
+            },
+            {
+                "_index": "priest-2023-12-20-1636",
+                "_id": "270457",
+                "_score": 0.0,
+                "_source": {
+                    "id": 270457,
+                    "navn": "Jane Petersen",
+                    "navnesuggest": "Maria Petersen",
+                    "sogne": "7200 7201",
+                    "provstier": "313",
+                    "stifte": "3",
+                    "mrkodetilknytninger": "7200 7201",
+                    "stillingskoder": "9023",
+                    "organisertilknytninger": "38636 38637",
+                    "deleted": false,
+                    "origin": 1,
+                    "created": 1703090194000,
+                    "changed": 1703090194000
+                }
+            },
+            {
+                "_index": "priest-2023-12-20-1636",
+                "_id": "423",
+                "_score": 0.0,
+                "_source": {
+                    "id": 423,
+                    "navn": "Joe Petersen",
+                    "navnesuggest": "Joe Petersen",
+                    "sogne": "7200 7201",
+                    "provstier": "313",
+                    "stifte": "3",
+                    "mrkodetilknytninger": "7200 7201",
+                    "stillingskoder": "9023",
+                    "organisertilknytninger": "38636 38637",
+                    "deleted": false,
+                    "origin": 1,
+                    "created": 1703090194000,
+                    "changed": 1703090194000
+                }
+            }
+        ]
+    }
 }
 ```
 
@@ -1238,75 +1264,9 @@ restriktioner.
 
 ## Kontakt
 
-Folkekirkens IT  
+Folkekirkens It  
+By-, Land- og Kirkeministeriet  
 E-post: it-kontoret@km.dk  
 Telefon: 70 20 25 35  
 Telefontid: mandag-torsdag kl. 8.30-16.00 - fredag kl. 9.00-14.00  
-Hjemmeside: https://folkekirkensit.dk
-
-## Referencer
-
-### 1 Gamle feeds
-
-<https://sogn.dk/xmlfeeds/arrangementer2012.php>,  
-<https://sogn.dk/xmlfeeds/arrangementer.php>,  
-<https://sogn.dk/xmlfeeds/gudstjenester2012.php> og  
-<https://sogn.dk/xmlfeeds/gudstjenester.php>
-
-### 2 Stackoverflow GET request med body
-
-<https://stackoverflow.com/questions/36939748/elasticsearch-get-request-with-request-body>
-
-### 3 Alternativ til url encoding
-
-Se alternativ mulighed for at url_encode hele requestet (i stedet for at sende en request body):
-<https://stackoverflow.com/questions/14339696/elasticsearch-post-with-json-search-body-vs-get-with-json-in-url>
-
-### 4 Se ElasticSearch query string Syntax 
-
-Se <https://www.elastic.co/guide/en/elasticsearch/reference/5.1/query-dsl-query-string-query.html#query-string-syntax>
-
-### 5 Url encoding
-
-Bemærk at query strengen i parameteren q skal url encodes (hvis ikke din browser gør det for dig)
-
-### 6 Bemærk query strengen
-
-Bemærk at guery strengen er url encodet direkte ud fra request body (men med source som parameter nu)
-
-## Ændringslog
-
-### Version 4.1.0
-
-- Tilføjet eksempler på udtræk af sogne, provstier, stifter og kirker.
-- Formaterings ændringer.
-
-### Version 4.0.3
-
-- Tilrettet tekst og tilføjet manglende postman billeder.
-
-### Version 4.0.2, udgivet 22-11-2021
-
-- Publiceret til GitHub
-
-### Version 4.0.1, udgivet 15-3-2021
-
-- Tilføjede beskrivelse for de nyligt tilføjede felter for dawa og online for events og dawa for organisers.
-- Tilføjede beskrivelse af moreurl og noenddate for events.
-- Opdaterede eksempel for event resultat af søgning.
-- Små rettelser til tekst og grammatik.
-
-### Version 3.0.3, udgivet 11-6-2019
-
-- Tilføjede beskrivelse til hentning af data om Præster og Menighedsråd. Og enkelte rettelser til de gamle beskrivelser
-  for hentning af data om begivenheder, sogne, provstier og lokationer.
-- Tilføjede afsnit om brugen af Postman til at teste og debugge forespørgsler med.
-
-### Version 3.0.2, udgivet 29-5-2017
-
-- Opdaterede URL til es.sogn.dk (var sat til den ret lange URL som AWS sætter under oprettelsen af en ES instans).
-
-### Version 3.0.1, udgivet 22-5-2017
-
-- Nyt API baseret på ElasticSearch. Ny dokumentation i første version. Det forventes at der kommer flere typer til og
-  flere eksempler på hentning af data.
+https://folkekirkensit.dk
